@@ -1,0 +1,7 @@
+node_modules/
+dump.svg
+sdk_tmp/
+.*run.json
+server/tests
+email_creds.json
+bots_creds.json
