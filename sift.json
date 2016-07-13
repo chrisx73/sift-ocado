@@ -1,0 +1,80 @@
+{
+  "name": "sift-ocado",
+  "display-name": "Sift Ocado",
+  "description": "",
+  "author": "",
+  "version": "1.0.0",
+  "color": "#ed154f",
+  "image": "https://static.redsift.io/assets/sifts/template/template.jpg",
+  "interfaces": {
+    "email": {
+      "thread" : {
+        "controller": "frontend/controller.js"
+      }
+    },
+    "summary": {
+      "controller": "frontend/controller.js"
+    }
+  },
+  "dag": {
+    "inputs":{
+      "emails":{
+        "gmailEmails":{
+          "filter":{
+            "conditions":[{
+              "from":{
+                "regexp": {
+                  "pattern": ".*@gmail\\.com",
+                  "flags": "i"
+                }
+              }
+            },{
+              "date": "between now and 1 week before now"
+            }],
+            "wants": [
+              "archive"
+            ],
+            "operator": "AND"
+          }
+        }
+      }
+    },
+    "nodes":[{
+      "#": "Map",
+      "implementation": {
+        "javascript": "server/map.js"
+      },
+      "input": {
+          "bucket": "gmailEmails"
+      },
+      "outputs": {
+          "messages": {}
+      }
+    },
+    {
+      "#": "Reduce",
+      "implementation": {
+        "javascript": "server/reduce.js"
+      },
+      "input": {
+          "bucket": "messages",
+          "select": "*"
+      },
+      "outputs": {
+          "count": {}
+      }
+    }],
+    "stores":{
+      "messages" : {
+        "key$schema":"string"
+      }
+    },
+    "outputs":{
+      "exports":{
+        "count" : {
+          "key$schema":"string"
+        }
+      }
+    }
+  }
+}

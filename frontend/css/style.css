@@ -1,0 +1,26 @@
+/*
+* Sample Sift CSS
+*/
+
+/* Disable selection/Copy of UIWebView to improve navigation */
+* {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+/* Body style */
+body {
+	font: 10px Trebuchet MS, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Tahoma, sans-serif;
+	margin: 0 auto;
+	position: relative;
+}
+/* Label styles */
+.example-label {
+	font: 16px 'Electrolize', sans-serif;
+  text-align: center;
+  width: 100%;
+}
+.-bg-hero {
+		background-image: url('//static.redsift.io/assets/images/taxi-1.jpg');
+		background-color: rgb(42, 24, 22);
+}
