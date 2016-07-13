@@ -19,20 +19,28 @@
   "dag": {
     "inputs":{
       "emails":{
-        "gmailEmails":{
+        "ocadoOrders":{
           "filter":{
             "conditions":[{
               "from":{
                 "regexp": {
-                  "pattern": ".*@gmail\\.com",
+                  "pattern": "customerservices@ocado\\.com",
                   "flags": "i"
                 }
               }
             },{
-              "date": "between now and 1 week before now"
+              "date": "between now and 12 months before now"
+            },{
+              "subject":{
+                "regexp": {
+                  "pattern": "Confirmation of your order",
+                  "flags": "i"
+                }
+              }
             }],
             "wants": [
-              "archive"
+              "archive",
+              "strippedHtmlBody"
             ],
             "operator": "AND"
           }
@@ -45,7 +53,7 @@
         "javascript": "server/map.js"
       },
       "input": {
-          "bucket": "gmailEmails"
+          "bucket": "ocadoOrders"
       },
       "outputs": {
           "messages": {}
