@@ -18,11 +18,21 @@ module.exports = function(got) {
 
   console.log('sift-ocado: reduce.js: running...');
   
+  //inData.data.map(function(){ orderCount++; });
   var total = 0;
-  inData.data.map(function(){ total++; });
+  for (var d of inData.data) {
+    console.log('REDUCE: key: ', d.key);
+    var val = JSON.parse(d.value);
+    var tot = parseFloat(val.total);
+    console.log('REDUCE: total: ', tot);
+    total = total + tot;
+  }
+
+  var month = query[0];
+  console.log('REDUCE: month: ', month);
 
   // Return the total count of emails from @gmail.com
-  return ({name: 'count', key: 'TOTAL', value: total});
+  return ({name: 'count', key: month, value: total});
 
   // Possible return values are: undefined, null, promises, single or an array of objects
   // return objects should have the following structure

@@ -22,29 +22,22 @@
   <!-- Some implementation -->
 
   <!-- hero custom component from RedsiftUI -->
-  <rs-hero header="My First Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-anchor" sticky-header>
+  <!--<rs-hero header="My First Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-anchor" sticky-header>
     <code class="fade-in">I'm a Hero</code>
     <p class="fade-in delay">Checkout <strong><a href="https://docs.redsift.io/docs/client-code-redsift-ui">RedsiftUI</a><strong> for more colorful components!</p>
-  </rs-hero>
+  </rs-hero>-->
 
   <div class="content" id="scroll-anchor">
       <div class="content__container">
-  <div class="example-label"><span>type: </span><span id="type"></span></div>
-  <br>
-  <div class="example-label"><span>width: </span><span id="width">compact</span></div>
-  <div class="example-label"><span>height: </span><span id="height">compact</span></div>
-  <br>
-  <div class="example-label"><span id="message"></span></div>
-  <br>
-  <div class="example-label"><button id="load-data">Load Data</button></div>
-  <br>
-  <div class="example-label"><span id="data"></span></div>
-  <br>
-  <div class="example-label"><button id="notify-controller">Notify Controller</button></div>
+        <div id="chart"></div>
+      </div>
+  </div>
 
 
   <!-- You can optionally use our RedsiftUI library, remove the next line if you don't want to -->
+  <script src="//d3js.org/d3.v4.min.js"></script>
   <script src="https://static.redsift.io/ui/latest/js/sift/redsift.umd.min.js"></script>
+  <script src="//static.redsift.io/reusable/d3-rs-lines/latest/d3-rs-lines.umd-es2015.min.js"></script>
 
   <!-- Required Library -->
   <!-- Injected by the SDK. DO NOT REMOVE this script! -->

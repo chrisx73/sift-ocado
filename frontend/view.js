@@ -25,38 +25,33 @@ var ncCount = 0;
 Sift.View.presentView = function (value) {
   console.log('sift-ocado: presentView: ', value);
 
-  /*
-  * Example code below can be removed
-  */
-  // Simple dom updates for the data we received after transition is over.
-  updateDOM('width', value.sizeClass.current.width);
-  updateDOM('height', value.sizeClass.current.height);
-  updateDOM('message', value.data.message);
-  updateDOM('type', value.type);
+   'use strict';
 
-  if(ldButton) {
-    ldButton = document.getElementById('load-data');
-    ldButton.addEventListener('click', function () {
-      console.log('sift-ocado: ldButton clicked');
-      Sift.Controller.loadData({key: 'TOTAL'}).then(function(result) {
-        console.log('sift-ocado: loadData returned: ', result);
-        var msg = 'No data yet. Please run your DAG.';
-        if(result) {
-          msg = result + ' emails from @gmail.com in your inbox';
-        }
-        document.getElementById('data').textContent = msg;
-      });
-    });
-  }
+   let counts = value.data;
 
-  if(ncButton) {
-    ncButton = document.getElementById('notify-controller');
-    ncButton.addEventListener('click', function () {
-      ncCount++;
-      console.log('sift-ocado: ncButton clicked: ', ncCount);
-      Sift.View.notifyListeners('ncButton-pressed', ncCount);
-    });
-  }
+   // convert counts keys to epoch  
+   let parseTime = d3.utcParse('%Y%m');
+   counts = counts.map(e => ({
+     l: parseTime(e.key).getTime(),
+     v: [e.value]
+   }));
+
+   console.log(d3.select);
+
+   let format = d3.format('.2f');
+
+   let stacks = d3_rs_lines.html()
+     .width(700) // scale it up
+     .tickCountIndex('utcMonth') // want monthly ticks
+     .labelTime('multi') // use the smart formatter
+     .curve('curveStep')
+     .tipHtml((d, i) => '£' + format(d[1][1]))
+     .tickFormatValue('($.0f');
+
+   d3.select('#chart')
+     .datum(counts)
+     .call(stacks);
+
 };
 
 /**

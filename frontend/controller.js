@@ -27,9 +27,17 @@ Sift.Controller.loadView = function (value, resolve, reject) {
   /*
   * Replace example code with your sift logic
   */
-  var height = value.sizeClass.current.height,
-    response = { data: {}};
+  var height = value.sizeClass.current.height;
 
+  Sift.Storage.getAll({
+      bucket: 'count'
+  }).then(function (values) {
+    console.log('sift-ocado: storage returned: ', JSON.stringify(values));
+    resolve({html:'frontend/view.html', data: values});
+  });
+
+  return null;
+/*
   var msg = 'returned synchronously';
   if(height === 'full') {
     // Asynchronous return
@@ -43,7 +51,7 @@ Sift.Controller.loadView = function (value, resolve, reject) {
       message: msg
   };
 
-  return response;
+  return response;*/
 };
 
 // Function: loadData
