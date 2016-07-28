@@ -1,0 +1,31 @@
+/**
+ * Sample Sift CSS
+ */
+
+/* Disable selection/Copy of UIWebView to improve navigation */
+* {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+body, html {
+  height: 100%;
+}
+
+.content {
+  min-width: 700px;
+  height: 100%;
+  width: 100%;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-direction: row;
+  flex-direction: row;
+  -ms-flex-line-pack: center;
+  align-content: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInN0eWxlLmNzcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7R0FFQTs7QUFFQSwrREFBQTtBQUNBO0NBQ0EsNEJBQUE7Q0FDQSwwQkFBQTtDQUNBLDhDQUFBO0NBQ0E7O0FBRUE7RUFDQSxhQUFBO0NBQ0E7O0FBRUE7RUFDQSxpQkFBQTtFQUNBLGFBQUE7RUFDQSxZQUFBO0VBQ0EscUJBQUE7RUFBQSxjQUFBO0VBQ0Esd0JBQUE7RUFBQSxvQkFBQTtFQUNBLDJCQUFBO0VBQUEsc0JBQUE7RUFDQSx1QkFBQTtFQUFBLG9CQUFBO0VBQ0Esc0JBQUE7RUFBQSx3QkFBQTtDQUNBIiwiZmlsZSI6InN0eWxlLmNzcyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogU2FtcGxlIFNpZnQgQ1NTXG4gKi9cblxuLyogRGlzYWJsZSBzZWxlY3Rpb24vQ29weSBvZiBVSVdlYlZpZXcgdG8gaW1wcm92ZSBuYXZpZ2F0aW9uICovXG4qIHtcblx0LXdlYmtpdC10b3VjaC1jYWxsb3V0OiBub25lO1xuXHQtd2Via2l0LXVzZXItc2VsZWN0OiBub25lO1xuXHQtd2Via2l0LXRhcC1oaWdobGlnaHQtY29sb3I6IHJnYmEoMCwgMCwgMCwgMCk7XG59XG5cbmJvZHksIGh0bWwge1xuICBoZWlnaHQ6IDEwMCU7XG59XG5cbi5jb250ZW50IHtcbiAgbWluLXdpZHRoOiA3MDBweDtcbiAgaGVpZ2h0OiAxMDAlO1xuICB3aWR0aDogMTAwJTtcbiAgZGlzcGxheTogZmxleDtcbiAgZmxleC1kaXJlY3Rpb246IHJvdztcbiAgYWxpZ24tY29udGVudDogY2VudGVyO1xuICBhbGlnbi1pdGVtczogY2VudGVyO1xuICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbn0iXSwic291cmNlUm9vdCI6Ii9zb3VyY2UvIn0= */
