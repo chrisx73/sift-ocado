@@ -1,19 +1,14 @@
 {
   "name": "sift-ocado",
   "display-name": "Sift Ocado",
-  "description": "",
-  "author": "",
+  "description": "Ocado receipts aggregation.",
+  "author": "Christian Miccio",
   "version": "1.0.0",
   "color": "#ed154f",
   "image": "https://static.redsift.io/assets/sifts/template/template.jpg",
   "interfaces": {
-    "email": {
-      "thread" : {
-        "controller": "frontend/controller.js"
-      }
-    },
     "summary": {
-      "controller": "frontend/controller.js"
+      "controller": "dist/js/controller.umd-es2015.js"
     }
   },
   "dag": {
