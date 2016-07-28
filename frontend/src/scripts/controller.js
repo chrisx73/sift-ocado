@@ -10,7 +10,7 @@ var SiftOcadoController = createSiftController({
     console.log('sift-ocado: controller: init');
     // This is how you subscribe to the storage  (to use class variables and functions don't
     // forget to bind the 'this' pointer!):
-    this.storage.subscribe('*', this.onStorageUpdate.bind(this));
+    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
   },
 
   /**
@@ -31,5 +31,8 @@ var SiftOcadoController = createSiftController({
 
   onStorageUpdate: function (value) {
     console.log('sift-ocado: controller: onStorageUpdate: ', value);
+    this.storage.getAll({ bucket: 'count' }).then(function (values) {
+      this.publish('storageupdated', values);
+    });
   }
 });

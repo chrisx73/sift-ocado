@@ -1595,7 +1595,6 @@
 	function _create(Base, methods) {
 	  var Creature = function() {
 	    Base.call(this);
-	    console.log('** this **: ', this);
 	    if(this.init && typeof this.init === 'function') {
 	      this.init();
 	    }
@@ -1622,6 +1621,18 @@
 	  presentView: function (value) {
 	    console.log('sift-ocado: view: presentView: ', value);
 	    var counts = value.data;
+	/* DEBUG: stub data
+	    var counts = [
+	      {key: '201512', value: 100.00},
+	      {key: '201601', value: 10.00},
+	      {key: '201602', value: 150.00},
+	      {key: '201603', value: 20.00},
+	      {key: '201604', value: 50.00},
+	      {key: '201605', value: 200.00},
+	      {key: '201606', value: 1000.00},
+	      {key: '201607', value: 100.00}
+	    ];
+	*/
 	    // convert counts keys to epoch
 	    var parseTime = d3.utcParse('%Y%m');
 	    counts = counts.map(function (e) {
@@ -1655,7 +1666,8 @@
 	   * Custom methods defined by the developer
 	   */
 	  onStorageUpdate: function (data) {
-	    console.log('sift-ocado: view: onStorageUpdate: ', value);
+	    console.log('sift-ocado: view: onStorageUpdate: ', data);
+	    this.presentView({data: data});
 	  }
 	});
 

@@ -1674,7 +1674,6 @@
 	function _create(Base, methods) {
 	  var Creature = function() {
 	    Base.call(this);
-	    console.log('** this **: ', this);
 	    if(this.init && typeof this.init === 'function') {
 	      this.init();
 	    }
@@ -1692,7 +1691,7 @@
 	    console.log('sift-ocado: controller: init');
 	    // This is how you subscribe to the storage  (to use class variables and functions don't
 	    // forget to bind the 'this' pointer!):
-	    this.storage.subscribe('*', this.onStorageUpdate.bind(this));
+	    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
 	  },
 
 	  /**
@@ -1713,6 +1712,9 @@
 
 	  onStorageUpdate: function (value) {
 	    console.log('sift-ocado: controller: onStorageUpdate: ', value);
+	    this.storage.getAll({ bucket: 'count' }).then(function (values) {
+	      this.publish('storageupdated', values);
+	    });
 	  }
 	});
 
