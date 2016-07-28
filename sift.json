@@ -1,14 +1,8 @@
 {
   "name": "sift-ocado",
-<<<<<<< HEAD
   "display-name": "Ocado Expenses",
-  "description": "",
-  "author": "",
-=======
-  "display-name": "Sift Ocado",
   "description": "Ocado receipts aggregation.",
   "author": "Christian Miccio",
->>>>>>> 8bbadb128bae04786a6c7e0d405745d833765716
   "version": "1.0.0",
   "color": "#ed154f",
   "image": "https://static.redsift.io/assets/sifts/template/template.jpg",
