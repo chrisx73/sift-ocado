@@ -22,6 +22,10 @@ body, html {
   );
 }
 
+.no-min-height {
+  min-height: 0px!important;
+}
+
 .ocado-layout-center {
   display: flex;
   flex-direction: row;
