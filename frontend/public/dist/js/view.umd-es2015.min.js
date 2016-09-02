@@ -1645,7 +1645,8 @@
 	    var stacks = d3_rs_lines.html()
 	      .width(700) // scale it up
 	      .tickCountIndex('utcMonth') // want monthly ticks
-	      .labelTime('multi') // use the smart formatter
+	      .tickDisplayValue(function(d){return '£'+d;}) // Force to £ for now
+	      .labelTime('%b') // use the smart formatter
 	      .curve('curveStep')
 	      .tipHtml(function (d, i) { return '£' + format(d[1][1]); })
 	      .tickFormatValue('($.0f');
