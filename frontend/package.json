@@ -19,8 +19,8 @@
   "homepage": "https://github.com/chrisx73/sift-ocado#readme",
   "dependencies": {},
   "devDependencies": {
-    "@redsift/redsift-bundler": "0.3.7",
-    "@redsift/sift-sdk-web": "0.5.5",
+    "@redsift/redsift-bundler": "0.5.5",
+    "@redsift/sift-sdk-web": "0.7.0",
     "gulp": "3.9.1"
   }
 }
