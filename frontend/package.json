@@ -20,6 +20,7 @@
   "dependencies": {
     "@redsift/d3-rs-lines": "^0.3.1",
     "@redsift/ui-rs-hero": "^0.4.0",
+    "d3": "^4.4.0",
     "d3-format": "^1.0.2",
     "d3-time-format": "^2.0.3"
   },

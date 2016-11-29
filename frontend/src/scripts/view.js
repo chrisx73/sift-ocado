@@ -6,6 +6,7 @@
 import { SiftView, registerSiftView } from '@redsift/sift-sdk-web';
 import '@redsift/ui-rs-hero';
 import { html as d3_rs_lines } from '@redsift/d3-rs-lines';
+import { select} from 'd3';
 import { format} from 'd3-format';
 import { utcParse} from 'd3-time-format';
 
@@ -22,7 +23,7 @@ export default class CreateView extends SiftView {
    */
   presentView (value) {
     console.log('sift-ocado: view: presentView: ', value);
-    var counts = value.data;
+    let counts = value.data;
 /* DEBUG: stub data
     var counts = [
       {key: '201512', value: 100.00},
@@ -52,9 +53,9 @@ export default class CreateView extends SiftView {
       .curve('curveStep')
       .tipHtml(d => '£' + _2f(d[1][1]))
       .tickFormatValue('($.0f');
-    // d3.select('#chart')
-    //   .datum(counts)
-    //   .call(stacks);
+    select('#chart')
+      .datum(counts)
+      .call(stacks);
   }
 
   /**
