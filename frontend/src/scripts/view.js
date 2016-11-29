@@ -3,20 +3,21 @@
  */
 'use strict';
 
-import { createSiftView } from '@redsift/sift-sdk-web';
+import { SiftView, registerSiftView } from "@redsift/sift-sdk-web";
+import '@redsift/ui-rs-hero';
 
-var SiftOcadoView = createSiftView({
-  init: function () {
+export default class CreateView extends SiftView {
+  constructor() {
+    // You have to call the super() method to initialize the base class.
+    super();
     console.log('sift-ocado: view: init');
-    // We subscribe to 'storageupdate' updates from the Controller
-    this.controller.subscribe('storageupdate', this.onStorageUpdate.bind(this));
-  },
+  }
 
   /**
    * Sift lifecycle method 'presentView'
    * Called by the framework when the loadView callback in frontend/controller.js calls the resolve function or returns a value
    */
-  presentView: function (value) {
+  presentView (value) {
     console.log('sift-ocado: view: presentView: ', value);
     var counts = value.data;
 /* DEBUG: stub data
@@ -51,21 +52,23 @@ var SiftOcadoView = createSiftView({
     d3.select('#chart')
       .datum(counts)
       .call(stacks);
-  },
+  }
 
   /**
    * Sift lifecycle method 'willPresentView'
    * Called when a sift starts to transition between size classes
    */
-  willPresentView: function (value) {
+  willPresentView (value) {
     console.log('sift-ocado: view: willPresentView: ', value);
-  },
+  }
 
   /**
    * Custom methods defined by the developer
    */
-  onStorageUpdate: function (data) {
+  onStorageUpdate (data) {
     console.log('sift-ocado: view: onStorageUpdate: ', data);
     this.presentView({data: data});
   }
-});
+}
+
+registerSiftView(new CreateView(window));

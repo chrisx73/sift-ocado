@@ -3,36 +3,30 @@
  */
 'use strict';
 
-import { createSiftController } from '@redsift/sift-sdk-web';
+import { SiftController, registerSiftController } from '@redsift/sift-sdk-web';
 
-var SiftOcadoController = createSiftController({
-  init: function () {
+export default class MyController extends SiftController {
+  constructor() {
     console.log('sift-ocado: controller: init');
-    // This is how you subscribe to the storage  (to use class variables and functions don't
-    // forget to bind the 'this' pointer!):
+    // You have to call the super() method to initialize the base class.
+    super();
     this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
-  },
+  }
 
-  /**
-   * Sift lifecycle method 'loadView'
-   * Invoked when a Sift has transitioned to a final size class or when its storage has been updated
-   */
-  loadView: function (value) {
+  loadView (value) {
     console.log('sift-ocado: controller: loadView: ', value);
     return {
       html: 'view.html',
       data: this.storage.getAll({ bucket: 'count' })
     };
-  },
+  }
 
-  /**
-   * Custom methods defined by the developer
-   */
-
-  onStorageUpdate: function (value) {
+  onStorageUpdate (value) {
     console.log('sift-ocado: controller: onStorageUpdate: ', value);
     this.storage.getAll({ bucket: 'count' }).then(function (values) {
       this.publish('storageupdated', values);
     });
   }
-});
+}
+
+registerSiftController(new MyController());
