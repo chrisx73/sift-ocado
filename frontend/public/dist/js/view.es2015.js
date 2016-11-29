@@ -1154,40 +1154,563 @@ logger.setLevel('warn');
  * Copyright (c) 2016 Redsift Limited. All rights reserved.
  */
 
-function createSiftView(instanceMethods) {
-  return _create(SiftView, instanceMethods);
-}
-
 /**
- * Local functions
+ * SiftView
  */
-function _create(Base, methods) {
-  let Creature = function() {
-    Base.call(this);
-    if(this.init && typeof this.init === 'function') {
-      this.init();
-    }
-  };
-  Creature.prototype = Object.create(Base.prototype);
-  Creature.constructor = Creature;
-  Object.keys(methods).forEach((method) => {
-    Creature.prototype[method] = methods[method];
-  });
-  return new Creature();
+function registerSiftView(siftView) {
+  console.log('[Redsift::registerSiftView]: registered');
 }
 
-var SiftOcadoView = createSiftView({
-  init: function () {
+const SCROLL_DURATION = 200;
+
+// Adapted from https://coderwall.com/p/hujlhg/smooth-scrolling-without-jquery
+function smooth_scroll_to(element, target, duration) {
+    target = Math.round(target);
+    duration = Math.round(duration);
+    if (duration < 0) {
+        return Promise.reject('bad duration');
+    }
+    if (duration === 0) {
+        element.scrollTop = target;
+        return Promise.resolve('no-duration');
+    }
+
+    let start_time = Date.now();
+    let end_time = start_time + duration;
+
+    let start_top = element.scrollTop;
+    let distance = target - start_top;
+
+    // based on http://en.wikipedia.org/wiki/Smoothstep
+    let smooth_step = function(start, end, point) {
+        if (point <= start) {
+            return 0;
+        }
+        if (point >= end) {
+            return 1;
+        }
+        let x = (point - start) / (end - start); // interpolation
+        return x * x * (3 - 2 * x);
+    }
+
+    return new Promise(function(resolve, reject) {
+        // This is to keep track of where the element's scrollTop is
+        // supposed to be, based on what we're doing
+        let previous_top = element.scrollTop;
+
+        let timer = null;
+        // This is like a think function from a game loop
+        let scroll_frame = function() {
+            /*
+            // This logic is too fragile
+            if(element.scrollTop != previous_top) {
+                window.clearInterval(timer);
+                reject('interrupted');
+                return;
+            }
+            */
+            // set the scrollTop for this frame
+            let now = Date.now();
+            let point = smooth_step(start_time, end_time, now);
+            let frameTop = Math.round(start_top + (distance * point));
+            element.scrollTop = frameTop;
+
+            // check if we're done!
+            if (now >= end_time) {
+                window.clearInterval(timer);
+                resolve('done');
+                return;
+            }
+
+            // If we were supposed to scroll but didn't, then we
+            // probably hit the limit, so consider it done; not
+            // interrupted.
+            if (element.scrollTop === previous_top && element.scrollTop !== frameTop) {
+                window.clearInterval(timer);
+                resolve('limit');
+                return;
+            }
+            previous_top = element.scrollTop;
+        }
+
+        // boostrap the animation process
+        timer = setInterval(scroll_frame, 10);
+    });
+}
+
+function clickFor(to, offset) {
+    return function(evt) {
+        let target = document.getElementById(to);
+        if (target === undefined) {
+            return true;
+        }
+        offset = offset || 0;
+        let delta = getAbsoluteBoundingRect(target).top + offset;
+        smooth_scroll_to(document.body, delta, SCROLL_DURATION).catch(function(e) {
+            console.error(e);
+        });
+        evt.preventDefault();
+        return false;
+    }
+}
+
+let scrollNodes = [];
+
+function throttle(type, name, obj) {
+    obj = obj || window;
+    let running = false;
+    let func = function() {
+        if (running) {
+            return;
+        }
+        running = true;
+        requestAnimationFrame(function() {
+            obj.dispatchEvent(new CustomEvent(name));
+            running = false;
+        });
+    };
+    obj.addEventListener(type, func);
+}
+
+function onScroll() {
+    let pos = window.scrollY;
+    scrollNodes.forEach(function(params) {
+        let node = params[0];
+        let current = params[1];
+        let cls = params[2];
+        let extents = params[4];
+
+        let state = false;
+        for (let i = 0; i < extents.length; i++) {
+            let extent = extents[i];
+            state = (pos > extent.start && pos < extent.end);
+            if (state) {
+                break;
+            }
+        }
+
+        if (state === current) {
+            return;
+        }
+        params[1] = state;
+        if (state) {
+            node.classList.add(cls);
+        } else {
+            node.classList.remove(cls);
+        }
+    });
+}
+
+function getAbsoluteBoundingRect(el) {
+    let doc = document,
+        win = window,
+        body = doc.body,
+
+        // pageXOffset and pageYOffset work everywhere except IE <9.
+        offsetX = win.pageXOffset !== undefined ? win.pageXOffset :
+        (doc.documentElement || body.parentNode || body).scrollLeft,
+        offsetY = win.pageYOffset !== undefined ? win.pageYOffset :
+        (doc.documentElement || body.parentNode || body).scrollTop,
+
+        rect = el.getBoundingClientRect();
+
+    if (el !== body) {
+        let parent = el.parentNode;
+
+        // The element's rect will be affected by the scroll positions of
+        // *all* of its scrollable parents, not just the window, so we have
+        // to walk up the tree and collect every scroll offset. Good times.
+        while (parent !== body) {
+            offsetX += parent.scrollLeft;
+            offsetY += parent.scrollTop;
+            parent = parent.parentNode;
+        }
+    }
+
+    return {
+        bottom: rect.bottom + offsetY,
+        height: rect.height,
+        left: rect.left + offsetX,
+        right: rect.right + offsetX,
+        top: rect.top + offsetY,
+        width: rect.width
+    };
+}
+
+function updateRegions() {
+    scrollNodes.forEach(function(params) {
+        let target = params[0].getBoundingClientRect();
+        let overlap = params[3];
+
+        let nodes = document.querySelectorAll(overlap);
+        let all = [];
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i];
+            let ext = getAbsoluteBoundingRect(node);
+            all.push({
+                start: ext.top - target.height,
+                end: ext.bottom
+            });
+        }
+        params[4] = all;
+    });
+}
+
+let Scroll = {
+    initSmooth(selector, offset) {
+        let nodes = document.querySelectorAll(selector);
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i];
+            let href = node.attributes.href;
+            if (href === undefined || href.length === 0) {
+                continue;
+            }
+            let to = href.nodeValue.toString();
+            if (to.substr(0, 1) !== '#') {
+                continue;
+            }
+
+            node.addEventListener('click', clickFor(to.substr(1), offset), false);
+        }
+    },
+    toggleClass(selector, cls, overlap) {
+        let nodes = document.querySelectorAll(selector);
+        if (nodes.length > 0) {
+            window.addEventListener('optimizedResize', updateRegions);
+            window.addEventListener('optimizedScroll', onScroll);
+        }
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i];
+            let param = [node, null, cls, overlap, []];
+
+            // check for this node
+            let found = false;
+            for (let ii = 0; i < scrollNodes.length; i++) {
+                if (scrollNodes[ii][0] == node) {
+                    scrollNodes[ii] = param;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                scrollNodes.push(param);
+            }
+        }
+        updateRegions();
+        onScroll();
+    },
+    updateRegions: updateRegions
+};
+
+throttle('scroll', 'optimizedScroll');
+throttle('resize', 'optimizedResize');
+
+let style = document.createElement("style");
+document.head.appendChild(style);
+let sheet = style.sheet;
+
+// NOTE: redsift-bundler doe snot support the import of string templates yet
+// import heroTmpl from '../templates/hero.tmpl';
+
+class RedsiftHero {
+  constructor(el, opts) {
+    this.locators = {
+      hero: '.hero',
+      heroContainer: '.hero__container',
+      heroContent: '.hero__content',
+      heroHeader: '.hero__header',
+      heroHeaderContent: '.hero__header__content',
+      heroStickyHeader: '.hero-sticky-header',
+      heroStickyHeaderActive: '.hero-sticky-header--active',
+      scrollDownArrow: '#smooth'
+    }
+
+    this.downArrowHtml = '<div class="down-arrow"></div>';
+    this.hasStickyHeader = false;
+
+    // TODO: replace with string import of template when support is added in redsift-bundler!
+    const heroTmpl = `
+      <div class="hero">
+          <div class="hero__header">
+              <h3 class="hero__header__content"><!-- yields header --></h3>
+          </div>
+          <div class="hero__container">
+              <div class="hero__content"><!-- yields content --></div>
+          </div>
+      </div>
+    `;
+
+    this._setupElement(el, heroTmpl, opts);
+  }
+
+  setHeader(text) {
+    this.$headerContent.innerHTML = text;
+  }
+
+  setBgClass(bgClass) {
+    this.$hero.className += ` ${bgClass}`;
+  }
+
+  enableStickyHeader(flag, triggerElSelector) {
+      // NOTE: Do NOT use cached element here. For the first run these elements
+      // are only cached after this feature is handled!
+
+      if (flag) {
+          let $header = document.querySelector(this.locators.heroHeader),
+              $hero = document.querySelector(this.locators.hero);
+
+          if ($header) {
+            $header.classList.remove(this.locators.heroHeader.substr(1));
+            $header.classList.add(this.locators.heroStickyHeader.substr(1));
+            $hero.parentNode.parentNode.appendChild($header);
+          } // else the sticky-header is already present on the page
+
+          if (triggerElSelector && triggerElSelector != '') {
+              try {
+                  // TODO: change toggleClass signature to provide element list instead of selector
+                  //       for '.content' to be more flexible (i.e. provide first element after hero
+                  //       without having to know the name)
+                  Scroll.toggleClass(
+                      this.locators.heroStickyHeader,
+                      this.locators.heroStickyHeaderActive.substr(1),
+                      // FIXXME: replace hardcoded '.content' with something appropriate (based on aboves TODO)!
+                      triggerElSelector
+                  );
+              } catch (err) {
+                  console.log('[redsift-ui/hero] Error enabling sticky header. Did you specify a valid element name for the "sticky-header" attribute?');
+              }
+          }
+
+          this.hasStickyHeader = true;
+      } else {
+          let $header = document.querySelector(this.locators.heroStickyHeader),
+              $hero = document.querySelector(this.locators.hero);
+
+          if ($header) {
+              $header.classList.add(this.locators.heroHeader.substr(1));
+              $header.classList.remove(this.locators.heroStickyHeader.substr(1));
+              $hero.insertBefore($header, $hero.firstChild);
+
+              // TODO: remove toggleClass callback!
+
+              this.hasStickyHeader = false;
+          }
+      }
+  }
+
+  enableScrollFeature(flag, scrollTarget) {
+    if (flag) {
+      this.$scrollFeature = this._createScrollFeatureElement(scrollTarget);
+      this.$container.appendChild(this.$scrollFeature);
+
+      let offset = this._getStickyHeaderHeight();
+      Scroll.initSmooth(this.locators.scrollDownArrow, -offset);
+    } else if (this.$scrollFeature && this.$scrollFeature.parentNode) {
+      this.$scrollFeature.parentNode.removeChild(this.$scrollFeature);
+    }
+  }
+
+  //----------------------------------------------------------
+  // Private API:
+  //----------------------------------------------------------
+
+  _setupElement(el, heroTmpl, opts) {
+    // Get the user provided inner block of the element, replace the elements
+    // content with the hero tree and insert the content at the correct place.
+    let userTmpl = el.innerHTML;
+    el.innerHTML = heroTmpl;
+
+    let content = document.querySelector(this.locators.heroContent);
+    content.innerHTML = userTmpl;
+
+    // NOTE: handle sticky header before caching, as this.$header is set
+    // differently depending this feature:
+    if (opts.hasStickyHeader) {
+      this.enableStickyHeader(true, opts.stickyHeaderTrigger);
+    }
+
+    this._cacheElements(opts.hasStickyHeader);
+
+    if (opts.header) {
+      this.setHeader(opts.header);
+    }
+
+    if (opts.bgClass) {
+      this.setBgClass(opts.bgClass);
+    }
+
+    if (opts.scrollTarget) {
+      this.enableScrollFeature(true, opts.scrollTarget);
+    }
+  }
+
+  _createScrollFeatureElement(scrollTarget) {
+    let a = document.createElement('a');
+
+    a.id = this.locators.scrollDownArrow.substr(1);
+    a.href = scrollTarget;
+    a.innerHTML = this.downArrowHtml;
+
+    // FIXXME: If the arrow is on the same height as the header it is not
+    // clickable due to the z-index.
+
+    return a;
+  }
+
+  _getStickyHeaderHeight() {
+      let height = 0;
+
+      try {
+          if (this.hasStickyHeader) {
+              height = this.$header.getBoundingClientRect().height
+          }
+      } catch (err) {
+          console.log('[redsift-ui/hero] Error enabling sticky header. Did you specify a valid element name for the "sticky-header" attribute?');
+      }
+  }
+
+  // TODO: implement generic caching functionality, e.g. this.querySelector(selector, useCache)
+  _cacheElements(hasStickyHeader) {
+    this.$hero = document.querySelector(this.locators.hero);
+    if (hasStickyHeader) {
+      this.$header = document.querySelector(this.locators.heroStickyHeader);
+    } else {
+      this.$header = document.querySelector(this.locators.heroHeader);
+    }
+    this.$headerContent = document.querySelector(this.locators.heroHeaderContent);
+    this.$container = document.querySelector(this.locators.heroContainer);
+    this.$content = document.querySelector(this.locators.heroContent);
+    this.$scrollFeature = undefined;
+  }
+}
+
+class RedsiftHeroWebComponent extends HTMLElement {
+
+  //----------------------------------------------------------------------------
+  // Lifecycle:
+  //----------------------------------------------------------------------------
+
+  attachedCallback() {
+    let stickyHeaderTrigger = this.stickyHeader;
+
+    this.rsHero = new RedsiftHero(this, {
+      hasStickyHeader: this.hasStickyHeader,
+      stickyHeaderTrigger: stickyHeaderTrigger,
+      header: this.header,
+      bgClass: this.bgClass,
+      scrollTarget: this.scrollTarget
+    });
+  }
+
+  attributeChangedCallback(attributeName, oldValue, newValue) {
+    if (attributeName === 'scroll-target') {
+      if (!newValue) {
+        this.rsHero.enableScrollFeature(false);
+      }
+
+      if (newValue && !oldValue) {
+        this.rsHero.enableScrollFeature(true, this.scrollTarget);
+      }
+    }
+
+    if (attributeName === 'sticky-header') {
+      if (this.hasStickyHeader) {
+        if (!newValue || newValue == '') {
+          console.log('[redsift-ui] WARNING: No selector specified with "sticky-header" attribute. No "hero-sticky-header--active" class will be added!');
+        }
+        this.rsHero.enableStickyHeader(true, this.stickyHeader);
+      } else {
+        this.rsHero.enableStickyHeader(false);
+      }
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  // Attributes:
+  //----------------------------------------------------------------------------
+
+  get header() {
+    return this.getAttribute('header');
+  }
+
+  set header(val) {
+    this.setAttribute('header', val);
+  }
+
+  get bgClass() {
+    return this.getAttribute('bg-class');
+  }
+
+  set bgClass(val) {
+    this.setAttribute('bg-class', val);
+  }
+
+  get hasStickyHeader() {
+    let a = this.getAttribute('sticky-header');
+    if (a == '' || a) {
+      return true;
+    }
+
+    return false;
+  }
+
+  get stickyHeader() {
+      return this.getAttribute('sticky-header');
+  }
+
+  set stickyHeader(val) {
+    return this.setAttribute('sticky-header', val);
+  }
+
+  get scrollTarget() {
+    return this.getAttribute('scroll-target');
+  }
+
+  set scrollTarget(val) {
+    return this.setAttribute('scroll-target', val);
+  }
+}
+
+var registerHeroElement = () => {
+    try {
+        document.registerElement('rs-hero', RedsiftHeroWebComponent);
+    } catch (e) {
+        console.log('[redsift-ui] Element already exists: ', e);
+    }
+}
+
+(function() {
+  if ('registerElement' in document
+      && 'import' in document.createElement('link')
+      && 'content' in document.createElement('template')) {
+    // platform is good!
+    // register the element per default:
+    registerHeroElement();
+  } else {
+    // polyfill the platform!
+    var e = document.createElement('script');
+    e.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/0.7.22/CustomElements.js';
+    document.body.appendChild(e);
+
+    window.addEventListener('WebComponentsReady', function(e) {
+      // register the element per default:
+      registerHeroElement();
+    });
+  }
+})();
+
+class CreateView extends SiftView {
+  constructor() {
+    // You have to call the super() method to initialize the base class.
+    super();
     console.log('sift-ocado: view: init');
-    // We subscribe to 'storageupdate' updates from the Controller
-    this.controller.subscribe('storageupdate', this.onStorageUpdate.bind(this));
-  },
+  }
 
   /**
    * Sift lifecycle method 'presentView'
    * Called by the framework when the loadView callback in frontend/controller.js calls the resolve function or returns a value
    */
-  presentView: function (value) {
+  presentView (value) {
     console.log('sift-ocado: view: presentView: ', value);
     var counts = value.data;
 /* DEBUG: stub data
@@ -1222,21 +1745,25 @@ var SiftOcadoView = createSiftView({
     d3.select('#chart')
       .datum(counts)
       .call(stacks);
-  },
+  }
 
   /**
    * Sift lifecycle method 'willPresentView'
    * Called when a sift starts to transition between size classes
    */
-  willPresentView: function (value) {
+  willPresentView (value) {
     console.log('sift-ocado: view: willPresentView: ', value);
-  },
+  }
 
   /**
    * Custom methods defined by the developer
    */
-  onStorageUpdate: function (data) {
+  onStorageUpdate (data) {
     console.log('sift-ocado: view: onStorageUpdate: ', data);
     this.presentView({data: data});
   }
-});
+}
+
+registerSiftView(new CreateView(window));
+
+export default CreateView;
