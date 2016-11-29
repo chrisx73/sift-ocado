@@ -6,3 +6,4 @@ server/tests
 email_creds.json
 bots_creds.json
 .*-grip.json
+slack_creds.json
