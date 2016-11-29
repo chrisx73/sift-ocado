@@ -10,11 +10,11 @@ export default class MyController extends SiftController {
     console.log('sift-ocado: controller: init');
     // You have to call the super() method to initialize the base class.
     super();
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
   }
 
   loadView (value) {
     console.log('sift-ocado: controller: loadView: ', value);
+    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
     return {
       html: 'view.html',
       data: this.storage.getAll({ bucket: 'count' })

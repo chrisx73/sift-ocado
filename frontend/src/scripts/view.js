@@ -3,8 +3,11 @@
  */
 'use strict';
 
-import { SiftView, registerSiftView } from "@redsift/sift-sdk-web";
+import { SiftView, registerSiftView } from '@redsift/sift-sdk-web';
 import '@redsift/ui-rs-hero';
+import { html as d3_rs_lines } from '@redsift/d3-rs-lines';
+import { format} from 'd3-format';
+import { utcParse} from 'd3-time-format';
 
 export default class CreateView extends SiftView {
   constructor() {
@@ -33,25 +36,25 @@ export default class CreateView extends SiftView {
     ];
 */
     // convert counts keys to epoch
-    var parseTime = d3.utcParse('%Y%m');
+    let parseTime = utcParse('%Y%m');
     counts = counts.map(function (e) {
       return {
         l: parseTime(e.key).getTime(),
         v: [e.value]
       };
     });
-    var format = d3.format('.2f');
-    var stacks = d3_rs_lines.html()
+    let _2f = format('.2f');
+    let stacks = d3_rs_lines()
       .width(700) // scale it up
       .tickCountIndex('utcMonth') // want monthly ticks
-      .tickDisplayValue(function(d){return '£'+d;}) // Force to £ for now
+      .tickDisplayValue(d => '£' + d) // Force to £ for now
       .labelTime('%b') // use the smart formatter
       .curve('curveStep')
-      .tipHtml((d, i) => '£' + format(d[1][1]))
+      .tipHtml(d => '£' + _2f(d[1][1]))
       .tickFormatValue('($.0f');
-    d3.select('#chart')
-      .datum(counts)
-      .call(stacks);
+    // d3.select('#chart')
+    //   .datum(counts)
+    //   .call(stacks);
   }
 
   /**
