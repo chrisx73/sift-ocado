@@ -5,3 +5,4 @@ sdk_tmp/
 server/tests
 email_creds.json
 bots_creds.json
+.*-grip.json

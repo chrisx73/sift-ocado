@@ -8,9 +8,7 @@ import { createSiftController } from '@redsift/sift-sdk-web';
 var SiftOcadoController = createSiftController({
   init: function () {
     console.log('sift-ocado: controller: init');
-    // This is how you subscribe to the storage  (to use class variables and functions don't
-    // forget to bind the 'this' pointer!):
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
+    this.onStorageUpdate = this.onStorageUpdate.bind(this);
   },
 
   /**
@@ -19,6 +17,7 @@ var SiftOcadoController = createSiftController({
    */
   loadView: function (value) {
     console.log('sift-ocado: controller: loadView: ', value);
+    this.storage.subscribe(['count'], this.onStorageUpdate);
     return {
       html: 'view.html',
       data: this.storage.getAll({ bucket: 'count' })
@@ -33,6 +32,6 @@ var SiftOcadoController = createSiftController({
     console.log('sift-ocado: controller: onStorageUpdate: ', value);
     this.storage.getAll({ bucket: 'count' }).then(function (values) {
       this.publish('storageupdated', values);
-    });
+    }.bind(this));
   }
 });

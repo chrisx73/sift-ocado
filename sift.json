@@ -4,8 +4,7 @@
   "description": "Ocado receipts aggregation.",
   "author": "Christian Miccio",
   "version": "1.0.0",
-  "color": "#ed154f",
-  "image": "https://static.redsift.io/assets/sifts/template/template.jpg",
+  "icon": "assets/blueprint.svg",
   "interfaces": {
     "summary": {
       "controller": "dist/js/controller.umd-es2015.js"
@@ -19,26 +18,28 @@
             "conditions":[{
               "from":{
                 "regexp": {
-                  "pattern": "customerservices@ocado\\.com",
+                  "pattern": "christian\\.miccio@gmail\\.com",
                   "flags": "i"
                 }
               }
-            },{
+            },
+            {
               "date": "between now and 12 months before now"
-            },{
+            },
+            {
               "subject":{
                 "regexp": {
-                  "pattern": "Confirmation of your order",
+                  "pattern": "Fwd: Confirmation of your order",
                   "flags": "i"
                 }
               }
             }],
-            "wants": [
-              "archive",
-              "strippedHtmlBody"
-            ],
             "operator": "AND"
-          }
+          },
+          "wants": [
+            "archive",
+            "strippedHtmlBody"
+          ]
         }
       }
     },

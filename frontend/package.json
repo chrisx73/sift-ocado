@@ -19,8 +19,13 @@
   "homepage": "https://github.com/chrisx73/sift-ocado#readme",
   "dependencies": {},
   "devDependencies": {
-    "@redsift/redsift-bundler": "0.3.7",
-    "@redsift/sift-sdk-web": "0.5.5",
+    "@redsift/d3-rs-bars": "^0.2.0",
+    "@redsift/redsift-bundler": "^0.5.5",
+    "@redsift/sift-sdk-web": "^0.6.1",
+    "@redsift/ui-rs-core": "^0.8.3",
+    "@redsift/ui-rs-hero": "^0.3.1",
+    "d3-selection": "^1.0.2",
+    "d3-time-format": "^2.0.2",
     "gulp": "3.9.1"
   }
 }

@@ -1,10 +1,10 @@
 /**
  * Observable pattern implementation.
- * Supports topics as String or Array.
+ * Supports topics as String or an Array.
  */
 class Observable {
   constructor() {
-    this.observers = [];
+    this._observers = [];
   }
 
   subscribe(topic, observer) {
@@ -16,18 +16,21 @@ class Observable {
   }
 
   unsubscribeAll(topic) {
-    if (!this.observers[topic]) {
+    if (!this._observers[topic]) {
       return;
     }
-    delete this.observers[topic];
+    delete this._observers[topic];
   }
 
   publish(topic, message) {
     this._op('_pub', topic, message);
   }
 
+  /**
+   * Internal methods
+   */
   _op(op, topic, value) {
-    if(Array.isArray(topic)) {
+    if (Array.isArray(topic)) {
       topic.forEach((t) => {
         this[op](t, value);
       });
@@ -38,26 +41,28 @@ class Observable {
   }
 
   _sub(topic, observer) {
-    this.observers[topic] || (this.observers[topic] = []);
-    this.observers[topic].push(observer);
+    this._observers[topic] || (this._observers[topic] = []);
+    if(observer && this._observers[topic].indexOf(observer) === -1) {
+      this._observers[topic].push(observer);
+    }
   }
 
   _unsub(topic, observer) {
-    if (!this.observers[topic]) {
+    if (!this._observers[topic]) {
       return;
     }
-    var index = this.observers[topic].indexOf(observer);
+    var index = this._observers[topic].indexOf(observer);
     if (~index) {
-      this.observers[topic].splice(index, 1);
+      this._observers[topic].splice(index, 1);
     }
   }
 
   _pub(topic, message) {
-    if (!this.observers[topic]) {
+    if (!this._observers[topic]) {
       return;
     }
-    for (var i = this.observers[topic].length - 1; i >= 0; i--) {
-      this.observers[topic][i](message)
+    for (var i = this._observers[topic].length - 1; i >= 0; i--) {
+      this._observers[topic][i](message)
     }
   }
 }
@@ -91,13 +96,22 @@ class EmailClient extends Observable {
 class SiftStorage extends Observable {
   constructor() {
     super();
+    this._storage = null;
   }
 
-  init(treo) {
-    Object.keys(treo).forEach((method) => {
-      this[method] = treo[method];
-    });
+  init(storage) {
+    this._storage = storage;
   }
+
+  get(d) { return this._storage.get(d) }
+  getIndexKeys(d) { return this._storage.getIndexKeys(d) }
+  getIndex(d) { return this._storage.getIndex(d) }
+  getWithIndex(d) { return this._storage.getWithIndex(d) }
+  getAllKeys(d) { return this._storage.getAllKeys(d) }
+  getAll(d) { return this._storage.getAll(d) }
+  getUser(d) { return this._storage.getUser(d) }
+  putUser(d) { return this._storage.putUser(d) }
+  delUser(d) { return this._storage.delUser(d) }
 }
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
@@ -105,6 +119,234 @@ var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
+
+var loglevel = createCommonjsModule(function (module) {
+/*
+* loglevel - https://github.com/pimterry/loglevel
+*
+* Copyright (c) 2013 Tim Perry
+* Licensed under the MIT license.
+*/
+(function (root, definition) {
+    "use strict";
+    if (typeof define === 'function' && define.amd) {
+        define(definition);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports = definition();
+    } else {
+        root.log = definition();
+    }
+}(commonjsGlobal, function () {
+    "use strict";
+    var noop = function() {};
+    var undefinedType = "undefined";
+
+    function realMethod(methodName) {
+        if (typeof console === undefinedType) {
+            return false; // We can't build a real method without a console to log to
+        } else if (console[methodName] !== undefined) {
+            return bindMethod(console, methodName);
+        } else if (console.log !== undefined) {
+            return bindMethod(console, 'log');
+        } else {
+            return noop;
+        }
+    }
+
+    function bindMethod(obj, methodName) {
+        var method = obj[methodName];
+        if (typeof method.bind === 'function') {
+            return method.bind(obj);
+        } else {
+            try {
+                return Function.prototype.bind.call(method, obj);
+            } catch (e) {
+                // Missing bind shim or IE8 + Modernizr, fallback to wrapping
+                return function() {
+                    return Function.prototype.apply.apply(method, [obj, arguments]);
+                };
+            }
+        }
+    }
+
+    // these private functions always need `this` to be set properly
+
+    function enableLoggingWhenConsoleArrives(methodName, level, loggerName) {
+        return function () {
+            if (typeof console !== undefinedType) {
+                replaceLoggingMethods.call(this, level, loggerName);
+                this[methodName].apply(this, arguments);
+            }
+        };
+    }
+
+    function replaceLoggingMethods(level, loggerName) {
+        /*jshint validthis:true */
+        for (var i = 0; i < logMethods.length; i++) {
+            var methodName = logMethods[i];
+            this[methodName] = (i < level) ?
+                noop :
+                this.methodFactory(methodName, level, loggerName);
+        }
+    }
+
+    function defaultMethodFactory(methodName, level, loggerName) {
+        /*jshint validthis:true */
+        return realMethod(methodName) ||
+               enableLoggingWhenConsoleArrives.apply(this, arguments);
+    }
+
+    var logMethods = [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error"
+    ];
+
+    function Logger(name, defaultLevel, factory) {
+      var self = this;
+      var currentLevel;
+      var storageKey = "loglevel";
+      if (name) {
+        storageKey += ":" + name;
+      }
+
+      function persistLevelIfPossible(levelNum) {
+          var levelName = (logMethods[levelNum] || 'silent').toUpperCase();
+
+          // Use localStorage if available
+          try {
+              window.localStorage[storageKey] = levelName;
+              return;
+          } catch (ignore) {}
+
+          // Use session cookie as fallback
+          try {
+              window.document.cookie =
+                encodeURIComponent(storageKey) + "=" + levelName + ";";
+          } catch (ignore) {}
+      }
+
+      function getPersistedLevel() {
+          var storedLevel;
+
+          try {
+              storedLevel = window.localStorage[storageKey];
+          } catch (ignore) {}
+
+          if (typeof storedLevel === undefinedType) {
+              try {
+                  var cookie = window.document.cookie;
+                  var location = cookie.indexOf(
+                      encodeURIComponent(storageKey) + "=");
+                  if (location) {
+                      storedLevel = /^([^;]+)/.exec(cookie.slice(location))[1];
+                  }
+              } catch (ignore) {}
+          }
+
+          // If the stored level is not valid, treat it as if nothing was stored.
+          if (self.levels[storedLevel] === undefined) {
+              storedLevel = undefined;
+          }
+
+          return storedLevel;
+      }
+
+      /*
+       *
+       * Public API
+       *
+       */
+
+      self.levels = { "TRACE": 0, "DEBUG": 1, "INFO": 2, "WARN": 3,
+          "ERROR": 4, "SILENT": 5};
+
+      self.methodFactory = factory || defaultMethodFactory;
+
+      self.getLevel = function () {
+          return currentLevel;
+      };
+
+      self.setLevel = function (level, persist) {
+          if (typeof level === "string" && self.levels[level.toUpperCase()] !== undefined) {
+              level = self.levels[level.toUpperCase()];
+          }
+          if (typeof level === "number" && level >= 0 && level <= self.levels.SILENT) {
+              currentLevel = level;
+              if (persist !== false) {  // defaults to true
+                  persistLevelIfPossible(level);
+              }
+              replaceLoggingMethods.call(self, level, name);
+              if (typeof console === undefinedType && level < self.levels.SILENT) {
+                  return "No console available for logging";
+              }
+          } else {
+              throw "log.setLevel() called with invalid level: " + level;
+          }
+      };
+
+      self.setDefaultLevel = function (level) {
+          if (!getPersistedLevel()) {
+              self.setLevel(level, false);
+          }
+      };
+
+      self.enableAll = function(persist) {
+          self.setLevel(self.levels.TRACE, persist);
+      };
+
+      self.disableAll = function(persist) {
+          self.setLevel(self.levels.SILENT, persist);
+      };
+
+      // Initialize with the right level
+      var initialLevel = getPersistedLevel();
+      if (initialLevel == null) {
+          initialLevel = defaultLevel == null ? "WARN" : defaultLevel;
+      }
+      self.setLevel(initialLevel, false);
+    }
+
+    /*
+     *
+     * Package-level API
+     *
+     */
+
+    var defaultLogger = new Logger();
+
+    var _loggersByName = {};
+    defaultLogger.getLogger = function getLogger(name) {
+        if (typeof name !== "string" || name === "") {
+          throw new TypeError("You must supply a name when creating a logger.");
+        }
+
+        var logger = _loggersByName[name];
+        if (!logger) {
+          logger = _loggersByName[name] = new Logger(
+            name, defaultLogger.getLevel(), defaultLogger.methodFactory);
+        }
+        return logger;
+    };
+
+    // Grab the current global log variable in case of overwrite
+    var _log = (typeof window !== undefinedType) ? window.log : undefined;
+    defaultLogger.noConflict = function() {
+        if (typeof window !== undefinedType &&
+               window.log === defaultLogger) {
+            window.log = _log;
+        }
+
+        return defaultLogger;
+    };
+
+    return defaultLogger;
+}));
+});
+
+var loglevel$1 = (loglevel && typeof loglevel === 'object' && 'default' in loglevel ? loglevel['default'] : loglevel);
 
 var index$2 = createCommonjsModule(function (module) {
 'use strict';
@@ -116,7 +358,7 @@ module.exports = function (x) {
 };
 });
 
-var require$$0$3 = (index$2 && typeof index$2 === 'object' && 'default' in index$2 ? index$2['default'] : index$2);
+var require$$0$2 = (index$2 && typeof index$2 === 'object' && 'default' in index$2 ? index$2['default'] : index$2);
 
 var index$1 = createCommonjsModule(function (module, exports) {
 'use strict';
@@ -126,7 +368,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = range;
 
-var _isPlainObj = require$$0$3;
+var _isPlainObj = require$$0$2;
 
 var _isPlainObj2 = _interopRequireDefault(_isPlainObj);
 
@@ -187,10 +429,10 @@ function range(opts) {
 module.exports = exports['default'];
 });
 
-var require$$0$2 = (index$1 && typeof index$1 === 'object' && 'default' in index$1 ? index$1['default'] : index$1);
+var require$$0$1 = (index$1 && typeof index$1 === 'object' && 'default' in index$1 ? index$1['default'] : index$1);
 
 var idbIndex = createCommonjsModule(function (module) {
-var parseRange = require$$0$2;
+var parseRange = require$$0$1;
 
 /**
  * Expose `Index`.
@@ -273,7 +515,7 @@ Index.prototype.cursor = function(opts, cb) {
 };
 });
 
-var require$$0$1 = (idbIndex && typeof idbIndex === 'object' && 'default' in idbIndex ? idbIndex['default'] : idbIndex);
+var require$$0 = (idbIndex && typeof idbIndex === 'object' && 'default' in idbIndex ? idbIndex['default'] : idbIndex);
 
 var index$3 = createCommonjsModule(function (module) {
 /**
@@ -316,7 +558,7 @@ var require$$2 = (index$3 && typeof index$3 === 'object' && 'default' in index$3
 
 var idbStore = createCommonjsModule(function (module) {
 var type = require$$2;
-var parseRange = require$$0$2;
+var parseRange = require$$0$1;
 
 /**
  * Expose `Store`.
@@ -547,7 +789,7 @@ var require$$1 = (idbStore && typeof idbStore === 'object' && 'default' in idbSt
 var schema$1 = createCommonjsModule(function (module) {
 var type = require$$2;
 var Store = require$$1;
-var Index = require$$0$1;
+var Index = require$$0;
 
 /**
  * Expose `Schema`.
@@ -739,7 +981,7 @@ var index = createCommonjsModule(function (module, exports) {
 var type = require$$2;
 var Schema = require$$2$1;
 var Store = require$$1;
-var Index = require$$0$1;
+var Index = require$$0;
 
 /**
  * Expose `Treo`.
@@ -915,608 +1157,543 @@ function indexedDB() {
 }
 });
 
-var require$$0 = (index && typeof index === 'object' && 'default' in index ? index['default'] : index);
+var treo = (index && typeof index === 'object' && 'default' in index ? index['default'] : index);
 
-var treoStorage = createCommonjsModule(function (module) {
-/**
- * Redsift SDK. Storage module.
- * Based on APIs from https://github.com/CrowdProcess/riak-pb
- *
- * Copyright (c) 2015 Redsift Limited. All rights reserved.
- */
-'use strict';
+var logger = loglevel$1.getLogger('RSStorage:operations');
+logger.setLevel('warn');
+
+// Email msg buckets
+const EMAIL_BUCKETS = ['_email.id', '_email.tid'];
+// Message Db schema
+const MSG_DB_VERSIONED_SCHEMA = [
+  // version 1
+  [
+    { name: '_id.list', indexes: ['sift.guid'] },
+    { name: '_tid.list', indexes: ['sift.guid'] }
+  ],
+  // version 2
+  [
+    { name: '_email.id', indexes: ['sift.guid'] },
+    { name: '_email.tid', indexes: ['sift.guid'] },
+    { name: '_id.list', drop: true },
+    { name: '_tid.list', drop: true }
+  ]
+];
+// Sync DB schema
+const SYNC_DB_SCHEMA = [
+  { name: 'events', indexes: ['value.sift.guid'] },
+  { name: 'admin' }];
+// Client DB schema
+const CLIENT_DB_SCHEMA = [
+  { name: 'tour'},
+  { name: 'spm' },
+  { name: 'auth' }];
+
 /*****************************************************************
- * Module
+ * Operations (alphabetically ordered)
  *****************************************************************/
-/* globals window, IDBKeyRange, Promise, define */
-var TreoStorage = function (dbInfo, internalUse) {
+// Create Db
+function opCreateDb(dbInfo) {
+  logger.trace('[opCreateDb]: ', dbInfo);
+  let dbs = {};
+  switch (dbInfo.type) {
+    case 'MSG':
+      dbs.msg = treo('rs_msg_db-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
+      break;
+    case 'SIFT':
+      if (!dbInfo.siftGuid) {
+        throw new Error('[opCreateDb]: dbInfo.siftGuid undefined');
+      }
+      logger.trace('[opCreateDb]: creating SIFT db');
+      var schema = _getTreoSchema(dbInfo.schema, true);
+      // Add user and redsift stores to sift db.
+      schema = schema.addStore('_user.default').addStore('_redsift');
+      dbs.db = treo(dbInfo.siftGuid + '-' + dbInfo.accountGuid, schema);
+      dbs.msg = treo('rs_msg_db-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
+      break;
+    case 'SYNC':
+      logger.trace('[opCreateDb]: creating SYNC db');
+      dbs.db = treo('rs_sync_log-' + dbInfo.accountGuid, _getTreoSchema(SYNC_DB_SCHEMA));
+      break;
+    case 'CLIENT':
+      dbs.db = treo('rs_client_db-' + dbInfo.clientName, _getTreoSchema(CLIENT_DB_SCHEMA));
+      break;
+    default:
+      throw new Error('[opCreateDb]: unsupported db type: ' + dbInfo.type);
+  }
+  return dbs;
+}
 
-  // dbInfo: {type: 'SYNC' | 'MSG' | 'SIFT', siftGuid: guid, accountGuid: guid, schema: schema }
+// Del
+function opDel(dbs, params, siftGuid) {
+  logger.trace('[opDel]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opDel]: params.bucket undefined');
+  }
+  if (!params.keys || params.keys.length === 0) {
+    logger.trace('[opDel]: params.keys undefined');
+    return Promise.resolve();
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    var keys = params.keys.map((k) => {
+      return siftGuid + '/' + k;
+    });
+    return _batchDelete(dbs.msg, { bucket: params.bucket, keys: keys });
+  }
+  return _batchDelete(dbs.db, params);
+}
 
-  // Email msg buckets
-  var EMAIL_ID_BUCKET = '_email.id';
-  var EMAIL_TID_BUCKET = '_email.tid';
-
-  var SPECIAL_BUCKETS = ['_id.list', '_tid.list', EMAIL_ID_BUCKET, EMAIL_TID_BUCKET];
-
-  var SYNC_DB_PREFIX = 'rs_sync_log';
-  var SYNC_DB_SCHEMA = [{ name: 'events', indexes: ['value.sift.guid']}, { name: 'admin' }];
-
-  var MSG_DB_PREFIX = 'rs_msg_db';
-  var MSG_DB_VERSIONED_SCHEMA = [
-    // version 1
-    [{name: '_id.list', indexes: ['sift.guid']}, {name: '_tid.list', indexes: ['sift.guid']}],
-    // version 2
-    [{name: EMAIL_ID_BUCKET, indexes: ['sift.guid']}, {name: EMAIL_TID_BUCKET, indexes: ['sift.guid']}, {name: '_id.list', drop: true}, {name: '_tid.list', drop: true}]
-  ];
-
-  // siftDb required buckets
-  var USER_BUCKET = '_user.default';
-  var REDSIFT_BUCKET = '_redsift';
-
-  // Treo.js
-  var treo = require$$0;
-  // Main db
-  var _db;
-  // Msg db for _email.id and _email.tid (in case this is a sift db)
-  var _msgDb;
-
-  var _siftGuid;
-  var _accountGuid;
-
-  /*****************************************************************
-   * Internal Operations
-   *****************************************************************/
-  // Batch deletion supports numeric keys
-  function _batchDelete(db, bucket, vals) {
-    // console.log('storage: _batchDelete: ', bucket, vals);
-    return new Promise(function (resolve, reject) {
-      var keys = vals;
-      db.transaction('readwrite', [bucket], function(err, tr) {
-        if (err) { return reject(err); }
-        var store = tr.objectStore(bucket);
-        var current = 0;
-        tr.onerror = tr.onabort = reject;
-        tr.oncomplete = function oncomplete() { resolve(); };
-        next();
-
-        function next() {
-          if (current >= keys.length) { return; }
-          var currentKey = keys[current];
-          var req;
-          req = store.delete(currentKey);
-          req.onerror = reject;
-          req.onsuccess = next;
-          current += 1;
-        }
+// Get
+function opGet(dbs, params, siftGuid) {
+  logger.trace('[opGet]: ', params);
+  if (!params.bucket) {
+    return Promise.reject('[opGet]: params.bucket undefined');
+  }
+  if (!params.keys || params.keys.length === 0) {
+    return Promise.reject('[opGet]: param.keys undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    var keys = params.keys.map((k) => {
+      return siftGuid + '/' + k;
+    });
+    return _findIn(dbs.msg, { bucket: params.bucket, keys: keys }).then((result) => {
+      return result.map((r) => {
+        return { key: r.key.split('/')[1], value: r.value };
       });
     });
   }
+  return _findIn(dbs.db, params);
+}
 
-  function _batchPut(db, bucket, kvs) {
-    // console.log('storage: _batchPut: ', db, bucket, kvs);
-    return new Promise(function (resolve, reject) {
-      var count = kvs.length;
-      db.transaction('readwrite', [bucket], function(err, tr) {
-        if (err) { return reject(err); }
-        var store = tr.objectStore(bucket);
-        var current = 0;
-        tr.onerror = tr.onabort = reject;
-        tr.oncomplete = function oncomplete() { resolve(); };
-        next();
+// Get All
+function opGetAll(dbs, params, siftGuid) {
+  logger.trace('[opGetAll]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opGetAll]: params.bucket undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, true)
+      .then(result =>
+        result.map(r => ({ key: r.key.split('/')[1], value: r.value }))
+      );
+  }
+  return _getAll(dbs.db, params, true);
+}
 
-        function next() {
-          if (current >= count) { return; }
-          // console.log('storage: _batchPut: put: ', kvs[current]);
-          var req;
-          req = store.put(kvs[current].value, kvs[current].key);
-          req.onerror = reject;
-          req.onsuccess = next;
-          current += 1;
-        }
+// Get All Keys
+function opGetAllKeys(dbs, params, siftGuid) {
+  logger.trace('[opGetAllKeys]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opGetAllKeys]: params.bucket undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, false)
+      .then(result => result.map(r => r.key.split('/')[1]));
+  }
+  return _getAll(dbs.db, params, false);
+}
+
+// Get Index
+function opGetIndex(dbs, params, siftGuid) {
+  logger.trace('[opGetIndex]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opGetIndex]:params.bucket undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, true).then((result) => {
+      return result.map((r) => {
+        return { key: r.key.split('/')[1], value: r.value };
       });
     });
   }
+  if (!params.index) {
+    return Promise.reject('[opGetIndex]:params.index undefined');
+  }
+  return _getAll(dbs.db, params, true);
+}
 
-  function _getWithIndexRange(db, bucket, keys, index, range) {
-    // console.log('storage: _getWithIndexRange: ', bucket, keys);
-    return new Promise(function (resolve, reject) {
-      var store = db.store(bucket);
-      var result = [];
-      var found = 0;
-      keys.forEach(function (k) {
-        result.push({key: k, value: undefined});
+// Get Index Keys
+function opGetIndexKeys(dbs, params, siftGuid) {
+  logger.trace('[opGetIndexKeys]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opGetIndexKeys]: params.bucket undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, false).then((result) => {
+      return result.map((r) => {
+        return { key: r.key.split('/')[1], value: r.value };
       });
-      store.cursor({ index: index, range: range, iterator: iterator }, done);
-
-      function iterator(cursor) {
-        var ki = keys.indexOf(cursor.primaryKey);
-        if (ki !== -1) {
-          // console.log('storage: found key: ', cursor.primaryKey);
-          result[ki].value = cursor.value.value;
-          found++;
-        }
-        if(found === keys.length) {
-          return done();
-        }
-        cursor.continue();
-      }
-
-      function done(err) {
-        // console.log('storage: _getWithIndexRange: result: ', result);
-        err ? reject(err) : resolve(result);
-      }
     });
   }
+  if (!params.index) {
+    return Promise.reject('[opGetIndexKeys]: params.index undefined');
+  }
+  return _getAll(dbs.db, params, false);
+}
 
-
-  function _findIn(db, bucket, keys) {
-    // console.log('storage: findIn: ', bucket, keys);
-    return new Promise(function (resolve, reject) {
-      var store = db.store(bucket);
-      var result = [];
-      var current = 0;
-      var sKeys = keys.slice();
-      sKeys = sKeys.sort(treo.cmp);
-
-      // console.log('storage: findIn: sorted keys: ', sKeys);
-      keys.forEach(function (k) {
-        result.push({key: k, value: undefined});
+// Get With Index
+function opGetWithIndex(dbs, params, siftGuid) {
+  logger.trace('[opGetWithIndex]: ', params, siftGuid);
+  if (!params.bucket) {
+    return Promise.reject('[opGetWithIndex]:params.bucket undefined');
+  }
+  if (!params.keys) {
+    return Promise.reject('[opGetWithIndex]:params.keys undefined');
+  }
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    var keys = params.keys.map((k) => {
+      return siftGuid + '/' + k;
+    });
+    return _getWithIndexRange(dbs.msg, { bucket: params.bucket, keys: keys, index: 'sift.guid', range: siftGuid }).then((result) => {
+      return result.map((r) => {
+        return { key: r.key.split('/')[1], value: r.value };
       });
-      store.cursor({ iterator: iterator }, done);
-
-      function iterator(cursor) {
-        // console.log('storage: findIn: iterator: ', cursor);
-        if (cursor.key > sKeys[current]) {
-          // console.log('storage: cursor ahead: ', cursor.key, sKeys[current]);
-          while(cursor.key > sKeys[current] && current < sKeys.length) {
-            current += 1;
-            // console.log('storage: moving to next key: ', cursor.key, sKeys[current]);
-          }
-          if(current > sKeys.length) {
-            // console.log('storage: exhausted keys. done.');
-            return done();
-          }
-        }
-        if (cursor.key === sKeys[current]) {
-          // console.log('storage: found key: ', cursor.key);
-          result[keys.indexOf(sKeys[current])] = {key: cursor.key, value: cursor.value.value};
-          current += 1;
-          (current < sKeys.length)?cursor.continue(sKeys[current]):done();
-        }
-        else {
-          // console.log('storage: continuing to next key: ', sKeys[current]);
-          cursor.continue(sKeys[current]); // go to next key
-        }
-      }
-
-      function done(err) {
-        // console.log('storage: findIn: result: ', result);
-        err ? reject(err) : resolve(result);
-      }
     });
   }
+  if (!params.index) {
+    return Promise.reject('[opGetWithIndex]:params.index undefined');
+  }
+  if (!params.range) {
+    return Promise.reject('[opGetWithIndex]:params.range undefined');
+  }
+  return _getWithIndexRange(dbs.db, params);
+}
 
-  function _getAll(db, bucket, loadValue, index, range) {
-    // console.log('storage: _getAll: ', bucket, loadValue, index, range);
-    return new Promise(function (resolve, reject) {
-      var result = [];
-      var keys = [];
-      var store = db.store(bucket);
-      var opts = {iterator: iterator};
-      if(index) {
-        opts.index = index;
-      }
-      if(range) {
-        opts.range = range;
-      }
-      store.cursor(opts, function(err) {
-        if(err) {
-          reject(err);
-        }
-        else {
-          if(!index && !range && !loadValue) {
-            resolve(keys);
-          }
-          else {
-            resolve(result);
-          }
-        }
-      });
-      function iterator(cursor) {
-        var kv = {key: cursor.primaryKey};
-        if(loadValue) {
-          kv.value = cursor.value.value;
-        }
-        if(index) {
-          kv.index = cursor.key;
-        }
-        result.push(kv);
-        keys.push(cursor.primaryKey);
-        cursor.continue();
-      }
+// Put
+function opPut(dbs, params, raw, siftGuid) {
+  logger.trace('[opPut]: ', params, raw, siftGuid);
+  var db = dbs.db;
+  if (!params.bucket) {
+    return Promise.reject('[opPut]: params.bucket undefined');
+  }
+  if (!params.kvs || params.kvs.length === 0) {
+    logger.warn('[opPut]: params.kvs undefined');
+    return Promise.resolve();
+  }
+  var kvs = params.kvs;
+  if (!raw) {
+    // Wrap value into a {value: object}
+    kvs = kvs.map((kv) => {
+      return { key: kv.key, value: { value: kv.value } };
     });
   }
-  /*****************************************************************
-   * External Operations
-   *****************************************************************/
-  var Private = {};
-  var Public = {};
-
-  Private.get =
-  Public.get =
-  function (params) {
-    var db = _db;
-    // console.log('storage: get: ', params);
-    if (!params.bucket) {
-      console.error('storage: get: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if (!params.keys || params.keys.length === 0) {
-      return Promise.reject('no keys specified');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      var keys = params.keys.map(function (k) {
-        return _siftGuid + '/' + k;
-      });
-      return _findIn(db, params.bucket, keys).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _findIn(db, params.bucket, params.keys);
-  };
-
-  Private.getIndexKeys =
-  Public.getIndexKeys =
-  function (params) {
-    var db = _db;
-    // console.log('storage: getIndexKeys: ', params);
-    if(!params.bucket) {
-      console.error('storage: getIndexKeys: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if(!params.index) {
-      return Promise.reject('no index specified');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      return _getAll(db, params.bucket, false, params.index, params.range).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _getAll(db, params.bucket, false, params.index, params.range);
-  };
-
-  Private.getIndex =
-  Public.getIndex =
-  function (params) {
-    var db = _db;
-    // console.log('storage: getIndex: ', params);
-    if(!params.bucket) {
-      console.error('storage: getIndex: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if(!params.index) {
-      return Promise.reject('no index specified');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      return _getAll(db, params.bucket, true, params.index, params.range).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _getAll(db, params.bucket, true, params.index, params.range);
-  };
-
-  Private.getWithIndex =
-  Public.getWithIndex =
-  function (params) {
-    var db = _db;
-    // console.log('storage: getWithIndex: ', params);
-    if(!params.bucket) {
-      console.error('storage: getWithIndex: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if(!params.keys) {
-      console.error('storage: getWithIndex: undefined keys');
-      return Promise.reject('no keys specified');
-    }
-    if(!params.index) {
-      console.error('storage: getWithIndex: undefined index');
-      return Promise.reject('no index specified');
-    }
-    if(!params.range) {
-      console.error('storage: getWithIndex: undefined range');
-      return Promise.reject('no range specified');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      var keys = params.keys.map(function (k) {
-        return _siftGuid + '/' + k;
-      });
-      return _getWithIndexRange(db, params.bucket, keys, params.index, params.range).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _getWithIndexRange(db, params.bucket, params.keys, params.index, params.range);
-  };
-
-  Private.getAllKeys =
-  Public.getAllKeys =
-  function (params) {
-    var db = _db;
-    // console.log('storage: getAllKeys: ', params);
-    if (!params.bucket) {
-      console.error('storage: getAllKeys: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      return _getAll(db, params.bucket, false).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _getAll(db, params.bucket, false);
-  };
-
-  Private.getAll =
-  Public.getAll =
-  function (params) {
-    var db = _db;
-    if (!params.bucket) {
-      console.error('storage: getAll: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      return _getAll(db, params.bucket, true).then(function (result) {
-        return result.map(function (r) {
-          return {key: r.key.split('/')[1], value: r.value};
-        });
-      });
-    }
-    return _getAll(db, params.bucket, true);
-  };
-
-  Private.getUser =
-  Public.getUser =
-  function (params) {
-    params.bucket = USER_BUCKET;
-    return Private.get(params);
-  };
-
-  Private.put =
-  function (params, raw) {
-    // console.log('storage: put: ', params, raw);
-    var db = _db;
-    if (!params.bucket) {
-      console.error('storage: put: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if (!params.kvs || params.kvs.length === 0) {
-      console.warn('storage: put called with no/empty kvs');
-      return Promise.resolve();
-    }
-    var kvs = params.kvs;
-    if(!raw) {
-      // Wrap value into a {value: object}
-      kvs = kvs.map(function (kv) {
-        return {key: kv.key, value: {value: kv.value}};
-      });
-    }
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      kvs = kvs.map(function (kv) {
-        return {key: _siftGuid + '/' + kv.key, value: kv.value};
-      });
-    }
-    return _batchPut(db, params.bucket, kvs);
-  };
-
-  Private.putUser =
-  Public.putUser =
-  function (params) {
-    params.bucket = USER_BUCKET;
-    if(!params.kvs || params.kvs.length === 0) {
-      return Promise.reject('no kvs provided');
-    }
-    return Private.put(params);
-  };
-
-  Private.del =
-  function (params) {
-    var db = _db;
-    if (!params.bucket) {
-      console.error('storage: del: undefined bucket');
-      return Promise.reject('undefined bucket');
-    }
-    if (!params.keys || params.keys.length === 0) {
-      // console.log('storage: del called with no/empty keys');
-      return Promise.resolve();
-    }
-    var keys = params.keys;
-    if(params.bucket === EMAIL_ID_BUCKET || params.bucket === EMAIL_TID_BUCKET) {
-      db = _msgDb;
-      keys = params.keys.map(function (k) {
-        return _siftGuid + '/' + k;
-      });
-    }
-    return _batchDelete(db, params.bucket, keys);
-  };
-
-  Public.delUser =
-  function (params) {
-    params.bucket = USER_BUCKET;
-    return Private.del(params);
-  };
-
-  Private.deleteDatabase =
-  function () {
-    return new Promise(function(resolve, reject) {
-      _db.drop(function(err) {
-        if(!err) {
-          resolve();
-        }
-        else {
-          reject(err);
-        }
-      });
+  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
+    db = dbs.msg;
+    var kvs = kvs.map((kv) => {
+      return { key: siftGuid + '/' + kv.key, value: kv.value };
     });
-  };
+  }
+  return _batchPut(db, { bucket: params.bucket, kvs: kvs }, raw);
+}
 
-  Private.cursor =
-  function (params, done) {
-    if (!params.bucket) {
-      console.error('storage: getCursor: undefined bucket');
-      done('storage: getCursor: undefined bucket');
+/*****************************************************************
+ * Internal functions
+ *****************************************************************/
+
+// define db schema
+function _getTreoSchema(stores, sift) {
+  logger.trace('[_getTreoSchema]: ', stores, sift);
+  var schema = treo.schema().version(1);
+  stores.forEach((os) => {
+    if (!(sift && (EMAIL_BUCKETS.indexOf(os.name) !== -1))) {
+      if (os.keypath) {
+        schema = schema.addStore(os.name, { key: os.keypath });
+      }
+      else {
+        schema = schema.addStore(os.name);
+      }
+      if (os.indexes) {
+        os.indexes.forEach((idx) => {
+          schema = schema.addIndex(idx, idx, { unique: false });
+        });
+      }
     }
-    else {
-      var bucket = _db.store(params.bucket);
-      bucket.cursor({iterator: params.iterator}, done);
-    }
-  };
+  });
+  return schema;
+}
 
-  Private.db =
-  function () {
-    return _db;
-  };
-
-  Private.msgDb =
-  function () {
-    return _msgDb;
-  };
-
-  Private.setSiftGuid =
-  function (guid) {
-    return _siftGuid = guid;
-  };
-
-  /*****************************************************************
-   * Initialisation
-   *****************************************************************/
-  // define db schema
-  function _getTreoSchema(stores, sift) {
-    var schema = treo.schema().version(1);
-    stores.forEach(function(os) {
-      if(!(sift && (SPECIAL_BUCKETS.indexOf(os.name) !== -1))) {
-        if(os.keypath) {
-          schema = schema.addStore(os.name, {key: os.keypath});
+// versioned db schema
+function _getVersionedTreoSchema(versions, sift) {
+  logger.trace('[_getVersionedTreoSchema]: ', versions, sift);
+  var schema = treo.schema();
+  versions.forEach((stores, i) => {
+    schema = schema.version(i + 1);
+    stores.forEach((os) => {
+      if (!(sift && (EMAIL_BUCKETS.indexOf(os.name) !== -1))) {
+        if (os.drop) {
+          logger.trace('[_getVersionedTreoSchema]: dropping store: ', os.name);
+          schema = schema.dropStore(os.name);
+        }
+        else if (os.keypath) {
+          schema = schema.addStore(os.name, { key: os.keypath });
         }
         else {
           schema = schema.addStore(os.name);
         }
-        if(os.indexes) {
-          os.indexes.forEach(function (idx) {
-            schema = schema.addIndex(idx, idx, {unique: false});
+        if (os.indexes) {
+          os.indexes.forEach((idx) => {
+            if (os.drop) {
+              logger.trace('[_getVersionedTreoSchema]: dropping store/index: ' + os.name + '/' + idx);
+              schema = schema.dropIndex(idx);
+            }
+            else {
+              schema = schema.addIndex(idx, idx, { unique: false });
+            }
           });
         }
       }
     });
-    return schema;
-  }
+  });
+  return schema;
+}
 
-  function _getVersionedTreoSchema(versions, sift) {
-    var schema = treo.schema();
-    versions.forEach(function(stores, i) {
-      schema = schema.version(i+1);
-      stores.forEach(function(os) {
-        if(!(sift && (SPECIAL_BUCKETS.indexOf(os.name) !== -1))) {
-          if(os.drop) {
-            // console.log('storage: _getVersionedTreoSchema: dropping store: ', os.name);
-            schema = schema.dropStore(os.name);
-          }
-          else if(os.keypath) {
-            schema = schema.addStore(os.name, {key: os.keypath});
-          }
-          else {
-            schema = schema.addStore(os.name);
-          }
-          if(os.indexes) {
-            os.indexes.forEach(function (idx) {
-              if(os.drop) {
-              // console.log('storage: _getVersionedTreoSchema: dropping store/index: ' + os.name + '/' + idx);
-                schema = schema.dropIndex(idx);
-              }
-              else {
-                schema = schema.addIndex(idx, idx, {unique: false});
-              }
-            });
-          }
-        }
-      });
+// Batch deletion supports numeric keys
+function _batchDelete(db, params) {
+  logger.trace('[_batchDelete]: ', params);
+  return new Promise((resolve, reject) => {
+    db.transaction('readwrite', [params.bucket], (err, tr) => {
+      if (err) { return reject(err); }
+      var store = tr.objectStore(params.bucket);
+      var current = 0;
+      var next = () => {
+        if (current >= params.keys.length) { return; }
+        var currentKey = params.keys[current];
+        var req;
+        req = store.delete(currentKey);
+        req.onerror = reject;
+        req.onsuccess = next;
+        current += 1;
+      };
+      tr.onerror = tr.onabort = reject;
+      tr.oncomplete = () => { resolve(); };
+      next();
     });
-    return schema;
-  }
+  });
+}
 
-  if(!dbInfo.hasOwnProperty('accountGuid')) {
-    console.error('storage: missing required property: dbInfo.accountGuid');
-    return null;
-  }
-  else {
-    _accountGuid = dbInfo.accountGuid;
-  }
-  // Create DBs
-  switch(dbInfo.type) {
-    case 'MSG':
-      _msgDb = treo(MSG_DB_PREFIX + '-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
-      break;
-    case 'SIFT':
-      if(!dbInfo.hasOwnProperty('siftGuid')) {
-        console.error('storage: missing required property: siftGuid');
-        return null;
+function _batchPut(db, params) {
+  logger.trace('[_batchPut]: ', params);
+  return new Promise((resolve, reject) => {
+    var count = params.kvs.length;
+    db.transaction('readwrite', [params.bucket], (err, tr) => {
+      if (err) { return reject(err); }
+      var store = tr.objectStore(params.bucket);
+      var current = 0;
+      var next = () => {
+        if (current >= count) { return; }
+        logger.trace('[_batchPut: put: ', params.kvs[current]);
+        var req;
+        req = store.put(params.kvs[current].value, params.kvs[current].key);
+        req.onerror = reject;
+        req.onsuccess = next;
+        current += 1;
+      };
+      tr.onerror = tr.onabort = reject;
+      tr.oncomplete = () => { resolve(); };
+      next();
+    });
+  });
+}
+
+function _getWithIndexRange(db, params) {
+  logger.trace('[_getWithIndexRange]: ', params);
+  return new Promise((resolve, reject) => {
+    var store = db.store(params.bucket);
+    var result = [];
+    var found = 0;
+    var iterator = (cursor) => {
+      var ki = params.keys.indexOf(cursor.primaryKey);
+      if (ki !== -1) {
+        logger.trace('[found key: ', cursor.primaryKey);
+        result[ki].value = cursor.value.value;
+        found++;
+      }
+      if (found === params.keys.length) {
+        return done();
+      }
+      cursor.continue();
+    };
+    var done = (err) => {
+      logger.trace('[_getWithIndexRange: result: ', result);
+      err ? reject(err) : resolve(result);
+    };
+    params.keys.forEach((k) => {
+      result.push({ key: k, value: undefined });
+    });
+    store.cursor({ index: params.index, range: params.range, iterator: iterator }, done);
+  });
+}
+
+function _findIn(db, params) {
+  logger.trace('[_findIn]: ', params);
+  return new Promise((resolve, reject) => {
+    var store = db.store(params.bucket);
+    var result = [];
+    var current = 0;
+    var iterator = (cursor) => {
+      logger.trace('[_findIn]: iterator: ', cursor);
+      if (cursor.key > sKeys[current]) {
+        logger.trace('[_findIn]: cursor ahead: ', cursor.key, sKeys[current]);
+        while (cursor.key > sKeys[current] && current < sKeys.length) {
+          current += 1;
+          logger.trace('[_findIn]: moving to next key: ', cursor.key, sKeys[current]);
+        }
+        if (current > sKeys.length) {
+          logger.trace('[_findIn]: exhausted keys. done.');
+          return done();
+        }
+      }
+      if (cursor.key === sKeys[current]) {
+        logger.trace('[_findIn]: found key: ', cursor.key, cursor.value);
+        result[params.keys.indexOf(sKeys[current])] = { key: cursor.key, value: cursor.value.value };
+        current += 1;
+        (current < sKeys.length) ? cursor.continue(sKeys[current]) : done();
       }
       else {
-        _siftGuid = dbInfo.siftGuid;
+        logger.trace('[_findIn]: continuing to next key: ', sKeys[current]);
+        cursor.continue(sKeys[current]); // go to next key
       }
-      // console.log('storage: creating SIFT db.');
-      var schema = _getTreoSchema(dbInfo.schema, true);
-      schema = schema.addStore(USER_BUCKET).addStore(REDSIFT_BUCKET);
-      _db = treo(_siftGuid + '-' + _accountGuid, schema);
-      _msgDb = treo(MSG_DB_PREFIX + '-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
-      break;
-    case 'SYNC':
-      // console.log('storage: creating SYNC db.');
-      _db = treo(SYNC_DB_PREFIX + '-' + dbInfo.accountGuid, _getTreoSchema(SYNC_DB_SCHEMA));
-      break;
-    default:
-      console.error('storage: unknown db type: ', dbInfo.type);
-      return null;
+    };
+    var done = (err) => {
+      logger.trace('[findIn]: result: ', result);
+      err ? reject(err) : resolve(result);
+    };
+    var sKeys = params.keys.slice();
+    sKeys = sKeys.sort(treo.cmp);
+    logger.trace('[findIn: sorted keys: ', sKeys);
+    params.keys.forEach((k) => {
+      result.push({ key: k, value: undefined });
+    });
+    store.cursor({ iterator: iterator }, done);
+  });
+}
+
+function _getAll(db, params, loadValue) {
+  logger.trace('[_getAll]: ', params, loadValue);
+  return new Promise((resolve, reject) => {
+    var result = [];
+    var keys = [];
+    var store = db.store(params.bucket);
+    var iterator = (cursor) => {
+      var kv = { key: cursor.primaryKey };
+      logger.trace('[_getAll]: cursor', cursor);
+      if (loadValue) {
+        kv.value = cursor.value.value;
+      }
+      if (params.index) {
+        kv.index = cursor.key;
+      }
+      result.push(kv);
+      keys.push(cursor.primaryKey);
+      cursor.continue();
+    };
+    var opts = { iterator: iterator };
+    if (params.index) {
+      opts.index = params.index;
+    }
+    if (params.range) {
+      opts.range = params.range;
+    }
+    store.cursor(opts, (err) => {
+      if (err) {
+        reject(err);
+      }
+      else {
+        if (!params.index && !params.range && !loadValue) {
+          logger.trace('[_getAll]: resolving: ', keys);
+          resolve(keys);
+        }
+        else {
+          logger.trace('[_getAll]: resolving: ', result);
+          resolve(result);
+        }
+      }
+    });
+  });
+}
+
+/**
+ * Redsift SDK. Sift Storage module.
+ * Based on APIs from https://github.com/CrowdProcess/riak-pb
+ *
+ * Copyright (c) 2016 Redsift Limited. All rights reserved.
+ */
+let _siftGuid = new WeakMap();
+let _dbs = new WeakMap();
+
+class Storage {
+  constructor(dbInfo, ll) {
+    this._logger = loglevel$1.getLogger('RSStorage');
+    this._logger.setLevel(ll || 'warn');
+    if (!dbInfo.accountGuid) {
+      throw new Error('[Storage]: dbInfo.accountGuid undefined');
+    }
+    _siftGuid.set(this, dbInfo.siftGuid);
+    _dbs.set(this, opCreateDb(dbInfo));
   }
 
-  if(internalUse) {
-    // console.log('storage: returning private methods');
-    return Private;
+  /*****************************************************************
+   * External Operations
+   *****************************************************************/
+  get(params) {
+    this._logger.trace('[Storage::get]: ', params);
+    return opGet(_dbs.get(this), params, _siftGuid.get(this));
   }
-  else {
-    // console.log('storage: public methods only');
-    return Public;
+
+  getAll(params) {
+    this._logger.trace('[Storage::getAll]: ', params);
+    return opGetAll(_dbs.get(this), params, _siftGuid.get(this));
   }
-};
 
-/*****************************************************************
- * Exports
- *****************************************************************/
-if (typeof module !== 'undefined' && module.exports) { module.exports = TreoStorage; } // CommonJs export
-if (typeof define === 'function' && define.amd) { define([], function () { return TreoStorage; }); } // AMD
-});
+  getAllKeys(params) {
+    this._logger.trace('[Storage::getAllKeys]: ', params);
+    return opGetAllKeys(_dbs.get(this), params, _siftGuid.get(this))
+  }
 
-var TreoStorage = (treoStorage && typeof treoStorage === 'object' && 'default' in treoStorage ? treoStorage['default'] : treoStorage);
+  getIndex(params) {
+    this._logger.trace('[Storage::getIndex]: ', params);
+    return opGetIndex(_dbs.get(this), params, _siftGuid.get(this));
+  }
+
+  getIndexKeys(params) {
+    this._logger.trace('[Storage::getIndexKeys]: ', params);
+    return opGetIndexKeys(_dbs.get(this), params, _siftGuid.get(this));
+  }
+
+  getWithIndex(params) {
+    this._logger.trace('[Storage::getWithIndex]: ', params);
+    return opGetWithIndex(_dbs.get(this), params, _siftGuid.get(this));
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  // Sift-only operations
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  delUser(params) {
+    params.bucket = '_user.default';
+    this._logger.trace('[Storage::delUser]: ', params);
+    return opDel(_dbs.get(this), params, _siftGuid.get(this));
+  }
+
+  getUser(params) {
+    params.bucket = '_user.default';
+    this._logger.trace('[Storage::getUser]: ', params);
+    return opGet(_dbs.get(this), params, _siftGuid.get(this));
+  }
+
+  putUser(params) {
+    params.bucket = '_user.default';
+    this._logger.trace('[Storage::putUser]: ', params);
+    if (!params.kvs || params.kvs.length === 0) {
+      return Promise.reject('[Storage::putUser]: params.kvs undefined');
+    }
+    return opPut(_dbs.get(this), params, false, _siftGuid.get(this));
+  }
+
+}
 
 class SiftController {
   constructor() {
     this._proxy = self;
-    this.storage = new SiftStorage();
     this.view = new Observable();
     this.emailclient = new EmailClient(self);
     this._registerMessageListeners();
@@ -1533,7 +1710,7 @@ class SiftController {
   }
 
   _registerMessageListeners() {
-    if(!this._proxy) return;
+    if (!this._proxy) return;
     this._proxy.onmessage = (e) => {
       // console.log('[SiftController::onmessage]: ', e.data);
       let method = e.data.method;
@@ -1548,14 +1725,14 @@ class SiftController {
 
   _init(params) {
     // console.log('[SiftController::_init]: ', params);
+    this.storage = new SiftStorage();
     this.storage.init(
-      TreoStorage({
+      new Storage({
         type: 'SIFT',
         siftGuid: params.siftGuid,
         accountGuid: params.accountGuid,
         schema: params.dbSchema
-      },
-        false)
+      })
     );
     // Initialise sift details
     this._guid = params.siftGuid;
@@ -1568,7 +1745,7 @@ class SiftController {
   }
 
   _terminate() {
-    if(!this._proxy) return;
+    if (!this._proxy) return;
     // console.log('[SiftController::_terminate]');
     this._proxy.close();
   }
@@ -1664,9 +1841,7 @@ function _create(Base, methods) {
 var SiftOcadoController = createSiftController({
   init: function () {
     console.log('sift-ocado: controller: init');
-    // This is how you subscribe to the storage  (to use class variables and functions don't
-    // forget to bind the 'this' pointer!):
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
+    this.onStorageUpdate = this.onStorageUpdate.bind(this);
   },
 
   /**
@@ -1675,6 +1850,7 @@ var SiftOcadoController = createSiftController({
    */
   loadView: function (value) {
     console.log('sift-ocado: controller: loadView: ', value);
+    this.storage.subscribe(['count'], this.onStorageUpdate);
     return {
       html: 'view.html',
       data: this.storage.getAll({ bucket: 'count' })
@@ -1689,6 +1865,6 @@ var SiftOcadoController = createSiftController({
     console.log('sift-ocado: controller: onStorageUpdate: ', value);
     this.storage.getAll({ bucket: 'count' }).then(function (values) {
       this.publish('storageupdated', values);
-    });
+    }.bind(this));
   }
 });
