@@ -4,17 +4,25 @@
 'use strict';
 
 import { SiftView, registerSiftView } from '@redsift/sift-sdk-web';
+import { html as bars } from '@redsift/d3-rs-bars';
+import { select } from 'd3-selection';
+import { utcParse } from 'd3-time-format';
+import pfv from './powerhouse-fv.json';
 import '@redsift/ui-rs-hero';
-import { html as d3_rs_lines } from '@redsift/d3-rs-lines';
-import { select} from 'd3';
-import { format} from 'd3-format';
-import { utcParse} from 'd3-time-format';
+
+var PFV_LINK = 'https://www.cdc.gov/pcd/issues/2014/13_0390.htm';
+var GOOGLE_SEARCH_TEMPLATE = 'https://www.google.co.uk/search?q=';
+
 
 export default class CreateView extends SiftView {
   constructor() {
     // You have to call the super() method to initialize the base class.
     super();
     console.log('sift-ocado: view: init');
+
+    // We subscribe to 'storageupdate' updates from the Controller
+    this.controller.subscribe('storageupdate', this.onStorageUpdate.bind(this));
+    window.addEventListener('resize', this.onResize.bind(this));
   }
 
   /**
@@ -23,40 +31,35 @@ export default class CreateView extends SiftView {
    */
   presentView (value) {
     console.log('sift-ocado: view: presentView: ', value);
-    let counts = value.data;
-/* DEBUG: stub data
-    var counts = [
-      {key: '201512', value: 100.00},
-      {key: '201601', value: 10.00},
-      {key: '201602', value: 150.00},
-      {key: '201603', value: 20.00},
-      {key: '201604', value: 50.00},
-      {key: '201605', value: 200.00},
-      {key: '201606', value: 1000.00},
-      {key: '201607', value: 100.00}
-    ];
-*/
+
     // convert counts keys to epoch
-    let parseTime = utcParse('%Y%m');
-    counts = counts.map(function (e) {
+    var parseTime = utcParse('%Y%m');
+    this._counts = value.data.map(function (e) {
       return {
         l: parseTime(e.key).getTime(),
         v: [e.value]
       };
     });
-    let _2f = format('.2f');
-    let stacks = d3_rs_lines()
-      .width(700) // scale it up
-      .tickCountIndex('utcMonth') // want monthly ticks
-      .tickDisplayValue(d => '£' + d) // Force to £ for now
-      .labelTime('%b') // use the smart formatter
-      .curve('curveStep')
-      .tipHtml(d => '£' + _2f(d[1][1]))
-      .tickFormatValue('($.0f');
-    select('#chart')
-      .datum(counts)
-      .call(stacks);
+
+    if(!this._expense) {
+      this._expense = bars('monthly')
+        .tickCountIndex('utcMonth') // want monthly ticks
+        .tickDisplayValue(function(d){ return '£' + d; }) // Force to £ for now
+        .labelTime('%b') // use the smart formatter
+        .orientation('bottom')
+        .height(200)
+        .tickFormatValue('($.0f');
+    }
+    this.onResize();
   }
+
+  onResize() {
+    var content = document.querySelector('.content__container--expand');
+    select('#expense')
+      .datum(this._counts)
+      .call(this._expense.width(content.clientWidth * 0.8));
+  }
+
 
   /**
    * Sift lifecycle method 'willPresentView'

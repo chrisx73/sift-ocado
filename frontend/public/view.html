@@ -14,22 +14,32 @@
 </head>
 
 <body id="home" style="height:100%">
-  <rs-hero header="Ocado Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-target" sticky-header=".content">
-    <p class="fade-in delay">Ocado online orders</p>
+  <rs-hero header="Ocado Groceries Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-target" sticky-header=".content">
+    <p class="fade-in delay recipe__suggestion">Try a <a href="http://www.bbc.co.uk/food/watercress">recipe</a> with watercress next time, it scores 100% in nutritional density</p>
   </rs-hero>
 
   <div class="content" id="scroll-target">
-    <div class="content__container--expand no-min-height">
+    <div class="content__container--expand ocado-container">
       <div class="sectionHeader">
         <div class="sectionTitle">Total</div>
         <div class="sectionSubtitle">monthly orders</div>
       </div>
       <div class="ocado-layout-center">
-        <div id="chart"></div>
+        <div id="expense"></div>
+      </div>
+    </div>
+    <div class="content__container--expand ocado-container">
+      <div class="sectionHeader">
+        <div class="sectionTitle">Nutrient</div>
+        <div class="sectionSubtitle">density scores</div>
+      </div>
+      <div class="ocado-layout-center">
+        <div id="nscore"></div>
       </div>
     </div>
   </div>
 
+  <!-- Implemetation file for all the view-related callbacks. -->
   <script src="dist/js/view.umd-es2015.js"></script>
 </body>
 

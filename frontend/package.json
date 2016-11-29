@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/chrisx73/sift-ocado#readme",
   "dependencies": {
+    "@redsift/d3-rs-bars": "^0.2.0",
     "@redsift/d3-rs-lines": "^0.3.1",
     "@redsift/ui-rs-hero": "^0.4.0",
     "d3": "^4.4.0",

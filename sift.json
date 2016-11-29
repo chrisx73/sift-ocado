@@ -4,7 +4,7 @@
   "description": "Ocado receipts aggregation.",
   "author": "Christian Miccio",
   "version": "1.0.0",
-  "icon": "https://static.redsift.io/assets/sifts/template/template.jpg",
+  "icon": "assets/blueprint.svg",
   "interfaces": {
     "summary": {
       "controller": "dist/js/controller.umd-es2015.js"
