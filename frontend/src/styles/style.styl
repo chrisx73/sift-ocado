@@ -1,13 +1,5 @@
-/**
- * Sample Sift CSS
- */
-
-/* Disable selection/Copy of UIWebView to improve navigation */
-* {
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
+@import "@redsift/ui-rs-core/dist/css/ui-rs-core.min.css"
+@import "@redsift/ui-rs-hero/dist/css/ui-rs-hero.min.css"
 
 body, html {
   height: 100%;
@@ -20,6 +12,15 @@ body, html {
     url('../../assets/panorama_day.jpg') 1x,
     url('../../assets/panorama_day_2x.jpg') 2x
   );
+}
+
+.hero-sticky-header--active{
+  box-shadow: 0px 0px 2px 2px rgba(0, 0, 0, 0.15)
+  background-image: url('../../assets/panorama_day.jpg')
+  background-image: -webkit-image-set(
+    url('../../assets/panorama_day.jpg') 1x,
+    url('../../assets/panorama_day_2x.jpg') 2x
+  )
 }
 
 .no-min-height {

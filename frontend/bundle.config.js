@@ -18,7 +18,7 @@ var mainJS = [
 var styles = [
   {
     name: 'style',
-    indexFile: './src/styles/style.css'
+    indexFile: './src/styles/style.styl'
   }
 ];
 
