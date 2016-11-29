@@ -1843,7 +1843,6 @@ var MyController = (function (SiftController) {
     console.log('sift-ocado: controller: init');
     // You have to call the super() method to initialize the base class.
     SiftController.call(this);
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
   }
 
   if ( SiftController ) MyController.__proto__ = SiftController;
@@ -1852,6 +1851,7 @@ var MyController = (function (SiftController) {
 
   MyController.prototype.loadView = function loadView (value) {
     console.log('sift-ocado: controller: loadView: ', value);
+    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
     return {
       html: 'view.html',
       data: this.storage.getAll({ bucket: 'count' })
