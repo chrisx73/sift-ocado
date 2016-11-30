@@ -10393,7 +10393,7 @@ class CreateView extends SiftView {
     if(!this._expense) {
       this._expense = bars('monthly')
         .tickCountIndex('utcMonth') // want monthly ticks
-        .tickDisplayValue(function(d){ return '£' + d; }) // Force to £ for now
+        .tickDisplayValue(d => '£' + d) // Force to £ for now
         .labelTime('%b') // use the smart formatter
         .orientation('bottom')
         .height(200)
