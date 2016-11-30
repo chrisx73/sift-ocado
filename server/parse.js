@@ -30,7 +30,7 @@ module.exports = function(got) {
   .filter(d => d.value)
   .forEach(d =>{
     console.log('MAP: key: ', d.key);
-    const msg = null;
+    let msg = null;
     try {
       msg = JSON.parse(d.value);
       console.log('MAP: msg.ID: ', msg.id);
@@ -54,7 +54,7 @@ function extractTotal(msg){
   if(!msg){
     return null;
   }
-  const tot = OrderRegExp.TOTAL.exec(msg.preview);
+  let tot = OrderRegExp.TOTAL.exec(msg.preview);
   if (!tot) {
     const msgBody = msg.strippedHtmlBody;
     // Try once again using the message body in case info not in preview
