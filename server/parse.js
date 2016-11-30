@@ -18,6 +18,38 @@ function yyyymm(d, separator) {
   return yyyy + separator + (mm[1] ? mm : '0' + mm[0]);
 }
 
+function extractTotal(msg){
+  if(!msg){
+    return null;
+  }
+  let tot = OrderRegExp.TOTAL.exec(msg.preview);
+  if (!tot) {
+    const msgBody = msg.strippedHtmlBody;
+    // Try once again using the message body in case info not in preview
+    tot = OrderRegExp.TOTAL.exec(msgBody);
+  }
+  //console.log('MAP: tot: ', tot);
+
+  // if found total and managed to extract value from it
+  if (tot && tot.length === 3) {
+    const total = tot[2];
+    console.log('MAP: total to add: ', total);
+
+    const date = new Date(msg.date);
+    return {
+      name: 'messages',
+      key: [yyyymm(date), date.getFullYear().toString(), msg.id].join('/'),
+      value: {
+        total: total,
+        msgId: msg.id,
+        threadId: msg.threadId,
+        date: date
+      }
+    };
+  }
+  return null;
+}
+
 // Entry point for DAG node
 module.exports = function(got) {
   // inData contains the key/value pairs that match the given query
@@ -50,34 +82,3 @@ module.exports = function(got) {
   return ret;
 };
 
-function extractTotal(msg){
-  if(!msg){
-    return null;
-  }
-  let tot = OrderRegExp.TOTAL.exec(msg.preview);
-  if (!tot) {
-    const msgBody = msg.strippedHtmlBody;
-    // Try once again using the message body in case info not in preview
-    tot = OrderRegExp.TOTAL.exec(msgBody);
-  }
-  //console.log('MAP: tot: ', tot);
-
-  // if found total and managed to extract value from it
-  if (tot && tot.length === 3) {
-    const total = tot[2];
-    console.log('MAP: total to add: ', total);
-
-    const date = new Date(msg.date);
-    return {
-      name: 'messages',
-      key: [yyyymm(date), date.getFullYear().toString(), msg.id].join('/'),
-      value: {
-        total: total,
-        msgId: msg.id,
-        threadId: msg.threadId,
-        date: date
-      }
-    };
-  }
-  return null;
-}
