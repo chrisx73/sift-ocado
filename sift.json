@@ -50,7 +50,8 @@
           "bucket": "ocadoOrders"
       },
       "outputs": {
-          "messages": {}
+          "messages": {},
+          "foodItems": {}
       }
     },
     {
@@ -65,15 +66,34 @@
       "outputs": {
           "count": {}
       }
+    },
+    {
+      "#": "Food Set Creator",
+      "implementation": {
+        "javascript": "server/intersection.js"
+      },
+      "input": {
+        "bucket": "foodItems",
+        "select": "*"
+      },
+      "outputs": {
+        "suggestions": {}
+      }
     }],
     "stores":{
       "messages" : {
         "key$schema":"string/string/string"
+      }, 
+      "foodItems":{
+        "key$schema": "string"
       }
     },
     "outputs":{
       "exports":{
         "count" : {
+          "key$schema":"string"
+        },
+        "suggestions" : {
           "key$schema":"string"
         }
       }

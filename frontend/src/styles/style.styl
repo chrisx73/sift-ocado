@@ -30,10 +30,9 @@ body, html {
 
 .ocado-layout-center {
   display: flex;
-  flex-direction: row;
-  align-content: center;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-around;
 }
 
 .sectionTitle {
@@ -61,4 +60,24 @@ body, html {
 
 a, a:visited {
   color: #fff!important;
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: stretch;
+  margin-bottom: 2em;
+  justify-content: space-around;
+}
+
+.card {
+  border: 1px solid black;
+  padding: 1em;
+  padding-top: 0.5em;
+}
+
+.card--family{
+  margin-bottom: 0.5em;
+  padding: 0.5em 0;
+  border-bottom: 1px solid black;
 }

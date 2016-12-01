@@ -7,7 +7,6 @@ import { SiftView, registerSiftView } from '@redsift/sift-sdk-web';
 import { html as bars } from '@redsift/d3-rs-bars';
 import { select } from 'd3-selection';
 import { utcParse } from 'd3-time-format';
-import pfv from './powerhouse-fv.json';
 import '@redsift/ui-rs-hero';
 
 var PFV_LINK = 'https://www.cdc.gov/pcd/issues/2014/13_0390.htm';
@@ -21,7 +20,8 @@ export default class CreateView extends SiftView {
     console.log('sift-ocado: view: init');
 
     // We subscribe to 'storageupdate' updates from the Controller
-    this.controller.subscribe('storageupdate', this.onStorageUpdate.bind(this));
+    this.controller.subscribe('countupdated', this.countUpdated.bind(this));
+    this.controller.subscribe('suggestionsupdated', this.suggestionsUpdated.bind(this));
     window.addEventListener('resize', this.onResize.bind(this));
   }
 
@@ -31,10 +31,14 @@ export default class CreateView extends SiftView {
    */
   presentView (value) {
     console.log('sift-ocado: view: presentView: ', value);
+    this.renderTotalSection(value.data.count);
+    this.renderCardsSection(value.data.suggestions);
+  }
 
-    // convert counts keys to epoch
-    var parseTime = utcParse('%Y%m');
-    this._counts = value.data.map(function (e) {
+
+  renderTotalSection(data){
+    const parseTime = utcParse('%Y%m');
+    this._counts = data.map(function (e) {
       return {
         l: parseTime(e.key).getTime(),
         v: [e.value]
@@ -44,7 +48,7 @@ export default class CreateView extends SiftView {
     if(!this._expense) {
       this._expense = bars('monthly')
         .tickCountIndex('utcMonth') // want monthly ticks
-        .tickDisplayValue(d => '£' + d) // Force to £ for now
+        .tickDisplayValue(d => `£${d}`) // Force to £ for now
         .labelTime('%b') // use the smart formatter
         .orientation('bottom')
         .height(200)
@@ -54,12 +58,11 @@ export default class CreateView extends SiftView {
   }
 
   onResize() {
-    var content = document.querySelector('.content__container--expand');
+    const content = document.querySelector('.content__container--expand');
     select('#expense')
       .datum(this._counts)
       .call(this._expense.width(content.clientWidth * 0.8));
   }
-
 
   /**
    * Sift lifecycle method 'willPresentView'
@@ -69,12 +72,30 @@ export default class CreateView extends SiftView {
     console.log('sift-ocado: view: willPresentView: ', value);
   }
 
+  renderCardsSection(data){
+    const parent = document.querySelector('#nscore');
+    parent.innerHTML = '';
+    const t = document.querySelector('#card-template');
+    Object.keys(data).forEach(k => {
+      t.content.querySelector('.card--family').innerHTML = k;
+      const s = data[k].suggestions;
+      const e = Math.floor(Math.random() * s.length);
+      t.content.querySelector('.card--name').innerHTML = s[e].name;
+      t.content.querySelector('.card--score').innerHTML = s[e].score;
+      parent.appendChild(document.importNode(t.content, true));
+    });
+  }
+
   /**
    * Custom methods defined by the developer
    */
-  onStorageUpdate (data) {
-    console.log('sift-ocado: view: onStorageUpdate: ', data);
-    this.presentView({data: data});
+  countUpdated (data) {
+    console.log('sift-ocado: view: countUpdated: ', data);
+    this.renderTotalSection(data);
+  }
+
+  suggestionsUpdated(data){
+    this.renderCardsSection(data);
   }
 }
 

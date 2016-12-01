@@ -3,7 +3,7 @@
  */
 
 'use strict';
-
+const pfvArray = require('./powerhouse-fv.json');
 const OrderRegExp = {
   TOTAL: /(Total \(estimated\))\D*(\d+\.\d+)/
 };
@@ -50,6 +50,28 @@ function extractTotal(msg){
   return null;
 }
 
+function checkItems(msg){
+  if(!msg){
+    return null;
+  }
+  const msgBody = msg.strippedHtmlBody;
+  const found = pfvArray.map(d =>{
+    const r = new RegExp(d.name, 'gi');
+    return r.test(msgBody) ? 1 : 0;
+  });
+
+  console.log('checkItems found:', found);
+  return {
+    name: 'foodItems',
+    key: msg.id,
+    value: {
+      items: found,
+      msgId: msg.id,
+      threadId: msg.threadId
+    }
+  }
+}
+
 // Entry point for DAG node
 module.exports = function(got) {
   // inData contains the key/value pairs that match the given query
@@ -58,8 +80,7 @@ module.exports = function(got) {
   console.log('sift-ocado: map.js: running...');
 
   let ret = [];
-  inData.data
-  .filter(d => d.value)
+  inData.data.filter(d => d.value)
   .forEach(d =>{
     console.log('MAP: key: ', d.key);
     let msg = null;
@@ -75,6 +96,11 @@ module.exports = function(got) {
     const a = extractTotal(msg);
     if(a){
       ret.push(a);
+    }
+
+    const b = checkItems(msg);
+    if(b){
+      ret.push(b);
     }
   })
 

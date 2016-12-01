@@ -34,7 +34,17 @@
         <div class="sectionSubtitle">density scores</div>
       </div>
       <div class="ocado-layout-center">
-        <div id="nscore"></div>
+        <p> Next time try something with a higher nutrient density score:</p>
+        <template id="card-template">
+          <div class="card">
+            <div class="card--family"></div>
+            <div class="card--name"></div>
+            <div class="card--score"></div>
+          </div>
+        </template>
+        <div id="nscore" class="cards">
+         
+        </div>
       </div>
     </div>
   </div>
