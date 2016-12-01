@@ -82,6 +82,9 @@ export default class CreateView extends SiftView {
       const e = Math.floor(Math.random() * s.length);
       t.content.querySelector('.card--name').innerHTML = s[e].name;
       t.content.querySelector('.card--score').innerHTML = s[e].score;
+      const f = data[k].found;
+      t.content.querySelector('.card--bought').innerHTML = f.length > 0 ? f.map(d => d.name).join(', ') : '';
+
       parent.appendChild(document.importNode(t.content, true));
     });
   }
