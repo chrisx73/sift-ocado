@@ -1851,18 +1851,45 @@ var MyController = (function (SiftController) {
 
   MyController.prototype.loadView = function loadView (value) {
     console.log('sift-ocado: controller: loadView: ', value);
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
+    this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
+    this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
     return {
       html: 'view.html',
-      data: this.storage.getAll({ bucket: 'count' })
+      data: this.startupFetch()
     };
   };
 
-  MyController.prototype.onStorageUpdate = function onStorageUpdate (value) {
-    console.log('sift-ocado: controller: onStorageUpdate: ', value);
-    this.storage.getAll({ bucket: 'count' }).then(function (values) {
-      this.publish('storageupdated', values);
+  MyController.prototype.fetchCount = function fetchCount (){
+    return this.storage.getAll({ bucket: 'count' });
+  };
+
+  MyController.prototype.onCountUpdate = function onCountUpdate (value) {
+    var this$1 = this;
+
+    console.log('sift-ocado: controller: onCountUpdate: ', value);
+    this.fetchCount().then(function (v) {
+      this$1.publish('countupdated', v);
     });
+  };
+
+  MyController.prototype.fetchSuggestions = function fetchSuggestions (){
+    return this.storage.get({
+      keys: ['families'],
+      bucket: 'suggestions'
+    }).then(function (d) { return JSON.parse(d[0].value); });
+  };
+  MyController.prototype.onSuggestionsUpdate = function onSuggestionsUpdate (value) {
+    var this$1 = this;
+
+    console.log('sift-ocado: controller: onSuggestionsUpdate: ', value);
+    this.fetchSuggestions().then(function (v) {
+      this$1.publish('suggestionsupdated', v);
+    });
+  };
+
+  MyController.prototype.startupFetch = function startupFetch (){
+    return Promise.all([this.fetchCount(), this.fetchSuggestions()])
+    .then(function (d) { return ({count: d[0], suggestions: d[1]}); })
   };
 
   return MyController;

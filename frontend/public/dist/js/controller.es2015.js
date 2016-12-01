@@ -1826,18 +1826,41 @@ class MyController extends SiftController {
 
   loadView (value) {
     console.log('sift-ocado: controller: loadView: ', value);
-    this.storage.subscribe(['count'], this.onStorageUpdate.bind(this));
+    this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
+    this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
     return {
       html: 'view.html',
-      data: this.storage.getAll({ bucket: 'count' })
+      data: this.startupFetch()
     };
   }
 
-  onStorageUpdate (value) {
-    console.log('sift-ocado: controller: onStorageUpdate: ', value);
-    this.storage.getAll({ bucket: 'count' }).then(function (values) {
-      this.publish('storageupdated', values);
+  fetchCount(){
+    return this.storage.getAll({ bucket: 'count' });
+  }
+
+  onCountUpdate (value) {
+    console.log('sift-ocado: controller: onCountUpdate: ', value);
+    this.fetchCount().then(v => {
+      this.publish('countupdated', v);
     });
+  }
+
+  fetchSuggestions(){
+    return this.storage.get({
+      keys: ['families'],
+      bucket: 'suggestions'
+    }).then(d => JSON.parse(d[0].value));
+  }
+  onSuggestionsUpdate (value) {
+    console.log('sift-ocado: controller: onSuggestionsUpdate: ', value);
+    this.fetchSuggestions().then(v => {
+      this.publish('suggestionsupdated', v);
+    });
+  }
+
+  startupFetch(){
+    return Promise.all([this.fetchCount(), this.fetchSuggestions()])
+    .then(d => ({count: d[0], suggestions: d[1]}))
   }
 }
 
