@@ -10429,9 +10429,15 @@ class CreateView extends SiftView {
     Object.keys(data).forEach(k => {
       t.content.querySelector('.card--family').innerHTML = k;
       const s = data[k].suggestions;
-      const e = Math.floor(Math.random() * s.length);
-      t.content.querySelector('.card--name').innerHTML = s[e].name;
-      t.content.querySelector('.card--score').innerHTML = s[e].score;
+      let name = 'Keep it Up!';
+      let score = '';
+      if(s.length > 0){ 
+        const e = Math.floor(Math.random() * s.length);
+        name = s[e].name;
+        score = s[e].score;
+      }
+      t.content.querySelector('.card--name').innerHTML = name;
+      t.content.querySelector('.card--score').innerHTML = score;
       const f = data[k].found;
       t.content.querySelector('.card--bought').innerHTML = f.length > 0 ? f.map(d => d.name).join(', ') : '';
 

@@ -10395,9 +10395,15 @@ var CreateView = (function (SiftView) {
     Object.keys(data).forEach(function (k) {
       t.content.querySelector('.card--family').innerHTML = k;
       var s = data[k].suggestions;
-      var e = Math.floor(Math.random() * s.length);
-      t.content.querySelector('.card--name').innerHTML = s[e].name;
-      t.content.querySelector('.card--score').innerHTML = s[e].score;
+      var name = 'Keep it Up!';
+      var score = '';
+      if(s.length > 0){ 
+        var e = Math.floor(Math.random() * s.length);
+        name = s[e].name;
+        score = s[e].score;
+      }
+      t.content.querySelector('.card--name').innerHTML = name;
+      t.content.querySelector('.card--score').innerHTML = score;
       var f = data[k].found;
       t.content.querySelector('.card--bought').innerHTML = f.length > 0 ? f.map(function (d) { return d.name; }).join(', ') : '';
 
