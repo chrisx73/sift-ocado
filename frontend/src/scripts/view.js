@@ -81,7 +81,7 @@ export default class CreateView extends SiftView {
       const s = data[k].suggestions;
       let name = 'Keep it Up!';
       let score = '';
-      if(s.length > 0){ 
+      if(s.length > 0){
         const e = Math.floor(Math.random() * s.length);
         name = s[e].name;
         score = s[e].score;
