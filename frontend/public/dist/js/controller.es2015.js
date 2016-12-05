@@ -1249,8 +1249,11 @@ function opGet(dbs, params, siftGuid) {
   if (!params.bucket) {
     return Promise.reject('[opGet]: params.bucket undefined');
   }
-  if (!params.keys || params.keys.length === 0) {
+  if (!params.keys) {
     return Promise.reject('[opGet]: param.keys undefined');
+  }
+  if(params.keys.length === 0) {
+    return Promise.resolve([]);
   }
   if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
     var keys = params.keys.map((k) => {

@@ -10397,7 +10397,7 @@ var CreateView = (function (SiftView) {
       var s = data[k].suggestions;
       var name = 'Keep it Up!';
       var score = '';
-      if(s.length > 0){ 
+      if(s.length > 0){
         var e = Math.floor(Math.random() * s.length);
         name = s[e].name;
         score = s[e].score;
