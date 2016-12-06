@@ -73,26 +73,45 @@ export default class CreateView extends SiftView {
   }
 
   renderCardsSection(data){
+    console.log('the data', data);
     const parent = document.querySelector('#nscore');
     parent.innerHTML = '';
-    const t = document.querySelector('#card-template');
+    const ct = document.querySelector('#card-template');
+    const recBox = ct.content.querySelector('.card__box--recommend .card__box__items');
+    const boughtBox = ct.content.querySelector('.card__box--bought .card__box__items');
     Object.keys(data).forEach(k => {
-      t.content.querySelector('.card--family').innerHTML = k;
+      const parentCard = ct.content.querySelector('.card');
+      parentCard.className = '';
+      parentCard.classList.add('card', 'card--' + k.toLowerCase().replace(/\/|\s/, '-'));
+      ct.content.querySelector('.card__family').innerHTML = k;
+      recBox.innerHTML = '';
+      boughtBox.innerHTML = '';
       const s = data[k].suggestions;
       let name = 'Keep it Up!';
-      let score = '';
+      let score = null;
       if(s.length > 0){
         const e = Math.floor(Math.random() * s.length);
         name = s[e].name;
         score = s[e].score;
+        recBox.appendChild(this.createItem(s[e].name, s[e].score));
       }
-      t.content.querySelector('.card--name').innerHTML = name;
-      t.content.querySelector('.card--score').innerHTML = score;
       const f = data[k].found;
-      t.content.querySelector('.card--bought').innerHTML = f.length > 0 ? f.map(d => d.name).join(', ') : '';
+      if(f.length > 0){
+        f.map(d => boughtBox.appendChild(this.createItem(d.name, d.score, score)))
+      }else{
 
-      parent.appendChild(document.importNode(t.content, true));
+      }
+
+      parent.appendChild(document.importNode(ct.content, true));
     });
+  }
+
+  createItem(name, score, max){
+    const t = document.querySelector('#item-template');
+    t.content.querySelector('.item__name .item__name__label').innerHTML = name;
+    t.content.querySelector('.item__score').innerHTML = score;
+    t.content.querySelector('.item__name').style.flex = `0 1 ${score}%`;
+    return document.importNode(t.content, true)
   }
 
   /**

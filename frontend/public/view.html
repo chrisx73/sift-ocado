@@ -35,20 +35,34 @@
       </div>
       <div class="ocado-layout-center">
         <p> Next time try something with a higher nutrient density score:</p>
-        <template id="card-template">
-          <div class="card">
-            <div class="card--family"></div>
-            <div class="card--name"></div>
-            <div class="card--score"></div>
-            <div class="card--bought"></div>
-          </div>
-        </template>
-        <div id="nscore" class="cards">
-         
+        <div class="helper">
+          <div id="nscore" class="cards"></div>
         </div>
       </div>
     </div>
   </div>
+  <template id="card-template">
+      <div class="card">
+      <h3 class="card__family"></h3>
+      <div class="card__box card__box--recommend">
+        <div class="card__box__title">We recommend</div>
+        <div class="card__box__items"></div>
+        </div>
+      <div class="card__box card__box--bought">
+        <div class="card__box__title">You purchased</div>
+        <div class="card__box__items"></div>
+      </div>
+    </div>
+  </template>
+  <template id="item-template">
+    <div class="item">
+      <div class="item__name">
+        <div class="item__name__label"></div>
+      </div>
+      <div class="item__spacer"></div>
+      <div class="item__score"></div>
+    </div>
+  </template>
 
   <!-- Implemetation file for all the view-related callbacks. -->
   <script src="dist/js/view.umd-es2015.js"></script>

@@ -37,7 +37,6 @@ body, html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
 }
 
 .sectionTitle {
@@ -67,25 +66,119 @@ a, a:visited {
   color: #fff!important;
 }
 
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  align-self: stretch;
-  margin-bottom: 2em;
-  justify-content: space-around;
-}
+.cards
+  display: flex
+  flex-wrap: wrap
+  align-self: stretch
+  margin-bottom: 2em
+  justify-content: space-around
+  width: 50em
 
-.card {
-  border: 1px solid black;
-  padding: 1em;
-  padding-top: 0.5em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+.card 
+  padding: 1em
+  padding-top: 0.5em
+  margin-bottom: 1em
+  display: flex
+  flex-direction: column
+  align-items: center
+  width: 230px
+  min-height: 230px
 
-.card--family{
-  margin-bottom: 0.5em;
-  padding: 0.5em 0;
-  border-bottom: 1px solid black;
-}
+
+.card__family
+  margin-bottom: 0.5em
+  border-bottom: 1px solid black
+  align-self: stretch
+
+h3.card__family
+  font-size: 1.6rem
+
+.card__box
+  align-self: stretch
+  display: flex
+  flex-direction: column
+  font-size: 0.9rem
+  
+.card__box__title
+  margin-bottom: 4px
+  
+.card__box--recommend
+  margin-bottom: 1em;
+
+.item
+  display: flex
+  width: 100%
+  align-self: stretch
+  justify-content: space-between
+  margin-bottom: 4px
+
+.item__name
+  position: relative
+  padding: 2px
+  line-height: 28px
+  
+.item__name__label
+  position: absolute
+  
+.item__spacer
+  flex: 1;
+  background-color: #C1C1C1
+
+.item__score
+  align-self: flex-end
+  flex: 0 0 38px
+  padding: 0.5em
+
+.card--cruciferous
+  .card__box--recommend
+    .item__name
+      background-color: #00d260
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #9de8c4
+
+.card--green-leafy
+  .card__box--recommend
+    .item__name
+      background-color: #00d260
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #9de8c4
+
+.card--allium
+  .card__box--recommend
+    .item__name
+      background-color: #9a00fe
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #c9a4ee
+
+.card--yellow-orange
+  .card__box--recommend
+    .item__name
+      background-color: #f39400
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #fbd496
+
+.card--citrus
+  .card__box--recommend
+    .item__name
+      background-color: #f0e211
+      color: black
+  .card__box--bought
+      .item__name
+        background-color: #f7f0c3
+
+.card--berry
+  .card__box--recommend
+    .item__name
+      background-color: #e70000
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #faa9a9
