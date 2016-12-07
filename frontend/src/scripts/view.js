@@ -12,6 +12,14 @@ import '@redsift/ui-rs-hero';
 var PFV_LINK = 'https://www.cdc.gov/pcd/issues/2014/13_0390.htm';
 var GOOGLE_SEARCH_TEMPLATE = 'https://www.google.co.uk/search?q=';
 
+var familyExamples = {
+  Cruciferous: 'broccoli, kale, cauliflower',
+  'Green leafy': 'lettuce, spinach, parsley',
+  Allium: 'onion, garlic, leek',
+  'Yellow/Orange': 'pumpkin, butternut squash',
+  Citrus: 'orange, lemon, grapefruit',
+  Berry: 'strawberries, blackberries'
+}
 
 export default class CreateView extends SiftView {
   constructor() {
@@ -83,7 +91,8 @@ export default class CreateView extends SiftView {
       const boughtBoxItems = ct.content.querySelector('.card__box--bought .card__box__items');
       const parentCard = ct.content.querySelector('.card');
       parentCard.classList.add('card--' + k.toLowerCase().replace(/\/|\s/, '-'));
-      ct.content.querySelector('.card__family').innerHTML = k;
+      ct.content.querySelector('.card__family__name').innerHTML = k;
+      ct.content.querySelector('.card__family__examples').innerHTML = [familyExamples[k], '...'].join(', ');
       const s = data[k].suggestions;
       if(s.length > 0){
         const e = Math.floor(Math.random() * s.length);
@@ -106,8 +115,9 @@ export default class CreateView extends SiftView {
   createItem(name, score){
     const t = document.querySelector('#item-template').cloneNode(true);
     t.content.querySelector('.item__name .item__name__label').innerHTML = name;
-    t.content.querySelector('.item__score').innerHTML = score;
-    t.content.querySelector('.item__name').style.flex = `0 1 ${score}%`;
+    t.content.querySelector('.item__score').innerHTML = `${score}%`;
+    // 230px - 45px(number) = 185px / 100 = 1.9
+    t.content.querySelector('.item__name').style.flex = `0 1 ${1.85 * score}px`;
     return document.importNode(t.content, true)
   }
 

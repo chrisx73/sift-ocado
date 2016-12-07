@@ -15,7 +15,7 @@
 
 <body id="home" style="height:100%">
   <rs-hero header="Ocado Groceries Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-target" sticky-header=".content">
-    <p class="fade-in delay recipe__suggestion">Try a <a href="http://www.bbc.co.uk/food/watercress">recipe</a> with watercress next time, it scores 100% in nutritional density</p>
+    <img class="logo" src="assets/icon-ocado-white.svg" />
   </rs-hero>
 
   <div class="content" id="scroll-target">
@@ -43,7 +43,10 @@
   </div>
   <template id="card-template">
       <div class="card">
-      <h3 class="card__family"></h3>
+      <div class="card__family">
+        <h3 class="card__family__name"></h3>
+        <p class="card__family__examples"></p>
+      </div>
       <div class="card__box card__box--recommend">
         <div class="card__box__title">We recommend</div>
         <div class="card__box__items"></div>
@@ -65,8 +68,8 @@
   </template>
   <template id="item-star">
     <div class="item">
-        You bought the best in this category!
-        <img src="">
+        <div class="item__text">You bought the best in this category!</div>
+        <img class="item__star" src="assets/star-gold-solid.svg">
     </div>
   </template>
 

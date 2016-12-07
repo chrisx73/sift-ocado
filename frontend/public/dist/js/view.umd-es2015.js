@@ -10325,6 +10325,15 @@ function registerHeroElement () {
   }
 })();
 
+var familyExamples = {
+  Cruciferous: 'broccoli, kale, cauliflower',
+  'Green leafy': 'lettuce, spinach, parsley',
+  Allium: 'onion, garlic, leek',
+  'Yellow/Orange': 'pumpkin, butternut squash',
+  Citrus: 'orange, lemon, grapefruit',
+  Berry: 'strawberries, blackberries'
+}
+
 var CreateView = (function (SiftView) {
   function CreateView() {
     // You have to call the super() method to initialize the base class.
@@ -10389,26 +10398,46 @@ var CreateView = (function (SiftView) {
   };
 
   CreateView.prototype.renderCardsSection = function renderCardsSection (data){
+    var this$1 = this;
+
+    console.log('the data', data);
     var parent = document.querySelector('#nscore');
     parent.innerHTML = '';
-    var t = document.querySelector('#card-template');
     Object.keys(data).forEach(function (k) {
-      t.content.querySelector('.card--family').innerHTML = k;
+      var ct = document.querySelector('#card-template').cloneNode(true);
+      var recBox = ct.content.querySelector('.card__box--recommend');
+      var recBoxItems = recBox.querySelector('.card__box__items');
+      var boughtBoxItems = ct.content.querySelector('.card__box--bought .card__box__items');
+      var parentCard = ct.content.querySelector('.card');
+      parentCard.classList.add('card--' + k.toLowerCase().replace(/\/|\s/, '-'));
+      ct.content.querySelector('.card__family__name').innerHTML = k;
+      ct.content.querySelector('.card__family__examples').innerHTML = [familyExamples[k], '...'].join(', ');
       var s = data[k].suggestions;
-      var name = 'Keep it Up!';
-      var score = '';
       if(s.length > 0){
         var e = Math.floor(Math.random() * s.length);
-        name = s[e].name;
-        score = s[e].score;
+        recBoxItems.appendChild(this$1.createItem(s[e].name, s[e].score));
+      }else{
+        var starTemp = document.querySelector('#item-star');
+        recBox.innerHTML = '';
+        recBox.appendChild(document.importNode(starTemp.content, true));
       }
-      t.content.querySelector('.card--name').innerHTML = name;
-      t.content.querySelector('.card--score').innerHTML = score;
-      var f = data[k].found;
-      t.content.querySelector('.card--bought').innerHTML = f.length > 0 ? f.map(function (d) { return d.name; }).join(', ') : '';
 
-      parent.appendChild(document.importNode(t.content, true));
+      var f = data[k].found;
+      if(f.length > 0){
+        f.map(function (d) { return boughtBoxItems.appendChild(this$1.createItem(d.name, d.score)); })
+      }
+
+      parent.appendChild(document.importNode(ct.content, true));
     });
+  };
+
+  CreateView.prototype.createItem = function createItem (name, score){
+    var t = document.querySelector('#item-template').cloneNode(true);
+    t.content.querySelector('.item__name .item__name__label').innerHTML = name;
+    t.content.querySelector('.item__score').innerHTML = score + "%";
+    // 230px - 45px(number) = 185px / 100 = 1.9
+    t.content.querySelector('.item__name').style.flex = "0 1 " + (1.85 * score) + "px";
+    return document.importNode(t.content, true)
   };
 
   /**

@@ -23,6 +23,9 @@ body, html {
   )
 }
 
+.logo
+  width: 60px
+  
 .ocado-container {
   min-width: 200px;
   min-height: 0px!important;
@@ -84,14 +87,22 @@ a, a:visited {
   width: 230px
   min-height: 230px
 
-
 .card__family
-  margin-bottom: 0.5em
   border-bottom: 1px solid black
   align-self: stretch
+  margin-bottom: 1em
 
-h3.card__family
+h3.card__family__name
   font-size: 1.6rem
+  margin-bottom: 0
+
+.card__family__examples
+  font-style: italic
+  font-size: 0.8rem
+  margin: 0
+  padding:0
+  margin-top: -1em;
+  margin-bottom: -0.5em;
 
 .card__box
   align-self: stretch
@@ -126,8 +137,18 @@ h3.card__family
 
 .item__score
   align-self: flex-end
-  flex: 0 0 38px
+  flex: 0 0 45px
   padding: 0.5em
+  text-align: center;
+  
+.item__text
+  max-width: 180px;
+  
+.item__star
+  align-self: flex-end
+  width: 30px
+  height: 30px
+  padding-right: 1em
 
 .card--cruciferous
   .card__box--recommend
