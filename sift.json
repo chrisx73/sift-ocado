@@ -6,6 +6,11 @@
   "version": "1.0.0",
   "icon": "assets/icon.svg",
   "interfaces": {
+    "email": {
+      "thread" : {
+        "controller": "dist/js/controller.umd-es2015.js"
+      }
+    },
     "summary": {
       "controller": "dist/js/controller.umd-es2015.js"
     }
@@ -78,7 +83,7 @@
       },
       "outputs": {
         "suggestions": {},
-        "idList":{}
+        "tidList":{}
       }
     }],
     "stores":{
@@ -97,8 +102,8 @@
         "suggestions" : {
           "key$schema":"string"
         },
-        "idList":{
-          "import":"_email.id"
+        "tidList":{
+          "import":"_email.tid"
         }
       }
     }

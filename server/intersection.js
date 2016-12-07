@@ -32,8 +32,8 @@ module.exports = function(got) {
     const items = d.items || [];
     const fthread = splitFandS(items);
     result.push({
-      name: 'idList',
-      key: d.msgId,
+      name: 'tidList',
+      key: d.threadId,
       value: {
         detail: filterOnFound(fthread)
       }

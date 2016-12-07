@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%">
+
+<head>
+  <!-- Basic Page Needs –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Sift Ocado</title>
+  <meta name="description" content="Ocado email receipts aggregation.">
+  <meta name="author" content="Christian Miccio">
+  <!-- Mobile Specific Metas –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <!-- CSS –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
+</head>
+
+<body id="home" style="height:100%">
+  <div id="nscore" class="cards"></div>
+  <template id="card-template">
+      <div class="card">
+      <div class="card__family">
+        <h3 class="card__family__name"></h3>
+        <p class="card__family__examples"></p>
+      </div>
+      <div class="card__box card__box--recommend">
+        <div class="card__box__title">We recommend</div>
+        <div class="card__box__items"></div>
+        </div>
+      <div class="card__box card__box--bought">
+        <div class="card__box__title">You purchased</div>
+        <div class="card__box__items"></div>
+      </div>
+    </div>
+  </template>
+  <template id="item-template">
+    <div class="item">
+      <div class="item__name">
+        <div class="item__name__label"></div>
+      </div>
+      <div class="item__spacer"></div>
+      <div class="item__score"></div>
+    </div>
+  </template>
+  <template id="item-star">
+    <div class="item">
+        <div class="item__text">You bought the best in this category!</div>
+        <img class="item__star" src="assets/star-gold-solid.svg">
+    </div>
+  </template>
+
+  <script src="dist/js/detail.umd-es2015.js"></script>
+</body>
+
+</html>
