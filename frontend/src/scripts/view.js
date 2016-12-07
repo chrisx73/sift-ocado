@@ -76,38 +76,35 @@ export default class CreateView extends SiftView {
     console.log('the data', data);
     const parent = document.querySelector('#nscore');
     parent.innerHTML = '';
-    const ct = document.querySelector('#card-template');
-    const recBox = ct.content.querySelector('.card__box--recommend .card__box__items');
-    const boughtBox = ct.content.querySelector('.card__box--bought .card__box__items');
     Object.keys(data).forEach(k => {
+      const ct = document.querySelector('#card-template').cloneNode(true);
+      const recBox = ct.content.querySelector('.card__box--recommend');
+      const recBoxItems = recBox.querySelector('.card__box__items');
+      const boughtBoxItems = ct.content.querySelector('.card__box--bought .card__box__items');
       const parentCard = ct.content.querySelector('.card');
-      parentCard.className = '';
-      parentCard.classList.add('card', 'card--' + k.toLowerCase().replace(/\/|\s/, '-'));
+      parentCard.classList.add('card--' + k.toLowerCase().replace(/\/|\s/, '-'));
       ct.content.querySelector('.card__family').innerHTML = k;
-      recBox.innerHTML = '';
-      boughtBox.innerHTML = '';
       const s = data[k].suggestions;
-      let name = 'Keep it Up!';
-      let score = null;
       if(s.length > 0){
         const e = Math.floor(Math.random() * s.length);
-        name = s[e].name;
-        score = s[e].score;
-        recBox.appendChild(this.createItem(s[e].name, s[e].score));
+        recBoxItems.appendChild(this.createItem(s[e].name, s[e].score));
+      }else{
+        const starTemp = document.querySelector('#item-star');
+        recBox.innerHTML = '';
+        recBox.appendChild(document.importNode(starTemp.content, true));
       }
+
       const f = data[k].found;
       if(f.length > 0){
-        f.map(d => boughtBox.appendChild(this.createItem(d.name, d.score, score)))
-      }else{
-
+        f.map(d => boughtBoxItems.appendChild(this.createItem(d.name, d.score)))
       }
 
       parent.appendChild(document.importNode(ct.content, true));
     });
   }
 
-  createItem(name, score, max){
-    const t = document.querySelector('#item-template');
+  createItem(name, score){
+    const t = document.querySelector('#item-template').cloneNode(true);
     t.content.querySelector('.item__name .item__name__label').innerHTML = name;
     t.content.querySelector('.item__score').innerHTML = score;
     t.content.querySelector('.item__name').style.flex = `0 1 ${score}%`;
