@@ -16,6 +16,7 @@
 <body id="home" style="height:100%">
   <rs-hero header="Ocado Groceries Sift" bg-class="-bg-hero -effect-darken" scroll-target="#scroll-target" sticky-header=".content">
     <img class="logo" src="assets/icon-ocado-white.svg" />
+    <p class="fade-in delay" id='hero-message'>We couldn't find any Ocado receipts...</p>
   </rs-hero>
 
   <div class="content" id="scroll-target">
@@ -33,7 +34,7 @@
         <div class="sectionTitle">Nutrient</div>
         <div class="sectionSubtitle">density scores</div>
       </div>
-      <div class="ocado-layout-center">
+      <div class="ocado-layout-center scoresinfo hide">
         <p> Next time try something with a higher nutrient density score:</p>
         <div class="helper">
           <div id="nscore" class="cards"></div>

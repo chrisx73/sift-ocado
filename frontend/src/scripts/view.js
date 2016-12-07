@@ -82,6 +82,7 @@ export default class CreateView extends SiftView {
 
   renderCardsSection(data){
     console.log('the data', data);
+    this.removeEmptyState();
     const parent = document.querySelector('#nscore');
     parent.innerHTML = '';
     Object.keys(data).forEach(k => {
@@ -119,6 +120,11 @@ export default class CreateView extends SiftView {
     // 230px - 45px(number) = 185px / 100 = 1.9
     t.content.querySelector('.item__name').style.flex = `0 1 ${1.85 * score}px`;
     return document.importNode(t.content, true)
+  }
+
+  removeEmptyState(){
+    document.querySelector('.scoresinfo').classList.remove('hide');
+    document.querySelector('#hero-message').style.display = 'none';
   }
 
   /**
