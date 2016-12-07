@@ -8,8 +8,17 @@ export function cardCreator(data){
     Berry: 'strawberries, blackberries'
   };
   const parent = document.querySelector('#nscore');
+  if(!parent) {
+    console.error('missing parent node from html');
+    return
+  }
   parent.innerHTML = '';
   Object.keys(data).forEach(k => {
+    const node = document.querySelector('#card-template');
+    if(!node) {
+      console.error('missing template node from html');
+      return
+    }
     const ct = document.querySelector('#card-template').cloneNode(true);
     const recBox = ct.content.querySelector('.card__box--recommend');
     const recBoxItems = recBox.querySelector('.card__box__items');
@@ -38,7 +47,12 @@ export function cardCreator(data){
 }
 
 function createItem(name, score){
-  const t = document.querySelector('#item-template').cloneNode(true);
+  const node = document.querySelector('#item-template');
+  if(!node) {
+    console.error('missing template node from html');
+    return;
+  }
+  const t = node.cloneNode(true);
   t.content.querySelector('.item__name .item__name__label').innerHTML = name;
   t.content.querySelector('.item__score').innerHTML = `${score}%`;
   // 230px - 45px(number) = 185px / 100 = 1.9
