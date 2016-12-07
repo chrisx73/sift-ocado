@@ -8,18 +8,10 @@ import { html as bars } from '@redsift/d3-rs-bars';
 import { select } from 'd3-selection';
 import { utcParse } from 'd3-time-format';
 import '@redsift/ui-rs-hero';
+import {cardCreator} from './lib/card-creator.js';
 
 var PFV_LINK = 'https://www.cdc.gov/pcd/issues/2014/13_0390.htm';
 var GOOGLE_SEARCH_TEMPLATE = 'https://www.google.co.uk/search?q=';
-
-var familyExamples = {
-  Cruciferous: 'broccoli, kale, cauliflower',
-  'Green leafy': 'lettuce, spinach, parsley',
-  Allium: 'onion, garlic, leek',
-  'Yellow/Orange': 'pumpkin, butternut squash',
-  Citrus: 'orange, lemon, grapefruit',
-  Berry: 'strawberries, blackberries'
-}
 
 export default class CreateView extends SiftView {
   constructor() {
@@ -83,43 +75,7 @@ export default class CreateView extends SiftView {
   renderCardsSection(data){
     console.log('the data', data);
     this.removeEmptyState();
-    const parent = document.querySelector('#nscore');
-    parent.innerHTML = '';
-    Object.keys(data).forEach(k => {
-      const ct = document.querySelector('#card-template').cloneNode(true);
-      const recBox = ct.content.querySelector('.card__box--recommend');
-      const recBoxItems = recBox.querySelector('.card__box__items');
-      const boughtBoxItems = ct.content.querySelector('.card__box--bought .card__box__items');
-      const parentCard = ct.content.querySelector('.card');
-      parentCard.classList.add('card--' + k.toLowerCase().replace(/\/|\s/, '-'));
-      ct.content.querySelector('.card__family__name').innerHTML = k;
-      ct.content.querySelector('.card__family__examples').innerHTML = [familyExamples[k], '...'].join(', ');
-      const s = data[k].suggestions;
-      if(s.length > 0){
-        const e = Math.floor(Math.random() * s.length);
-        recBoxItems.appendChild(this.createItem(s[e].name, s[e].score));
-      }else{
-        const starTemp = document.querySelector('#item-star');
-        recBox.innerHTML = '';
-        recBox.appendChild(document.importNode(starTemp.content, true));
-      }
-
-      const f = data[k].found;
-      if(f.length > 0){
-        f.map(d => boughtBoxItems.appendChild(this.createItem(d.name, d.score)))
-      }
-
-      parent.appendChild(document.importNode(ct.content, true));
-    });
-  }
-
-  createItem(name, score){
-    const t = document.querySelector('#item-template').cloneNode(true);
-    t.content.querySelector('.item__name .item__name__label').innerHTML = name;
-    t.content.querySelector('.item__score').innerHTML = `${score}%`;
-    // 230px - 45px(number) = 185px / 100 = 1.9
-    t.content.querySelector('.item__name').style.flex = `0 1 ${1.85 * score}px`;
-    return document.importNode(t.content, true)
+    cardCreator(data);
   }
 
   removeEmptyState(){
