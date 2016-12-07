@@ -2,7 +2,7 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
     (global.SiftOcado = factory());
-}(this, (function () { 'use strict';
+}(this, (function () {
 
 /**
  * Observable pattern implementation.
@@ -73,6 +73,40 @@ Observable.prototype._pub = function _pub (topic, message) {
   for (var i = this._observers[topic].length - 1; i >= 0; i--) {
     this$1._observers[topic][i](message)
   }
+};
+
+var SiftView = function SiftView() {
+  this._resizeHandler = null;
+  this._proxy = parent;
+  this.controller = new Observable();
+  this._registerMessageListeners();
+};
+
+SiftView.prototype.publish = function publish (topic, value) {
+ this._proxy.postMessage({
+    method: 'notifyController',
+    params: {
+      topic: topic,
+      value: value } },
+    '*');
+};
+
+SiftView.prototype._registerMessageListeners = function _registerMessageListeners () {
+    var this$1 = this;
+
+  window.addEventListener('message', function (e) {
+    var method = e.data.method;
+    var params = e.data.params;
+    if(method === 'notifyView') {
+      this$1.controller.publish(params.topic, params.value);
+    }
+    else if(this$1[method]) {
+      this$1[method](params);
+    }
+    else {
+      console.warn('[SiftView]: method not implemented: ', method);
+    }
+  }, false);
 };
 
 var EmailClient = (function (Observable) {
@@ -1178,462 +1212,8 @@ function indexedDB() {
 }
 });
 
-var treo = (index && typeof index === 'object' && 'default' in index ? index['default'] : index);
-
 var logger = loglevel$1.getLogger('RSStorage:operations');
 logger.setLevel('warn');
-
-// Email msg buckets
-var EMAIL_BUCKETS = ['_email.id', '_email.tid'];
-// Message Db schema
-var MSG_DB_VERSIONED_SCHEMA = [
-  // version 1
-  [
-    { name: '_id.list', indexes: ['sift.guid'] },
-    { name: '_tid.list', indexes: ['sift.guid'] }
-  ],
-  // version 2
-  [
-    { name: '_email.id', indexes: ['sift.guid'] },
-    { name: '_email.tid', indexes: ['sift.guid'] },
-    { name: '_id.list', drop: true },
-    { name: '_tid.list', drop: true }
-  ]
-];
-// Sync DB schema
-var SYNC_DB_SCHEMA = [
-  { name: 'events', indexes: ['value.sift.guid'] },
-  { name: 'admin' }];
-// Client DB schema
-var CLIENT_DB_SCHEMA = [
-  { name: 'tour'},
-  { name: 'spm' },
-  { name: 'auth' }];
-
-/*****************************************************************
- * Operations (alphabetically ordered)
- *****************************************************************/
-// Create Db
-function opCreateDb(dbInfo) {
-  logger.trace('[opCreateDb]: ', dbInfo);
-  var dbs = {};
-  switch (dbInfo.type) {
-    case 'MSG':
-      dbs.msg = treo('rs_msg_db-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
-      break;
-    case 'SIFT':
-      if (!dbInfo.siftGuid) {
-        throw new Error('[opCreateDb]: dbInfo.siftGuid undefined');
-      }
-      logger.trace('[opCreateDb]: creating SIFT db');
-      var schema = _getTreoSchema(dbInfo.schema, true);
-      // Add user and redsift stores to sift db.
-      schema = schema.addStore('_user.default').addStore('_redsift');
-      dbs.db = treo(dbInfo.siftGuid + '-' + dbInfo.accountGuid, schema);
-      dbs.msg = treo('rs_msg_db-' + dbInfo.accountGuid, _getVersionedTreoSchema(MSG_DB_VERSIONED_SCHEMA));
-      break;
-    case 'SYNC':
-      logger.trace('[opCreateDb]: creating SYNC db');
-      dbs.db = treo('rs_sync_log-' + dbInfo.accountGuid, _getTreoSchema(SYNC_DB_SCHEMA));
-      break;
-    case 'CLIENT':
-      dbs.db = treo('rs_client_db-' + dbInfo.clientName, _getTreoSchema(CLIENT_DB_SCHEMA));
-      break;
-    default:
-      throw new Error('[opCreateDb]: unsupported db type: ' + dbInfo.type);
-  }
-  return dbs;
-}
-
-// Del
-function opDel(dbs, params, siftGuid) {
-  logger.trace('[opDel]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opDel]: params.bucket undefined');
-  }
-  if (!params.keys || params.keys.length === 0) {
-    logger.trace('[opDel]: params.keys undefined');
-    return Promise.resolve();
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    var keys = params.keys.map(function (k) {
-      return siftGuid + '/' + k;
-    });
-    return _batchDelete(dbs.msg, { bucket: params.bucket, keys: keys });
-  }
-  return _batchDelete(dbs.db, params);
-}
-
-// Get
-function opGet(dbs, params, siftGuid) {
-  logger.trace('[opGet]: ', params);
-  if (!params.bucket) {
-    return Promise.reject('[opGet]: params.bucket undefined');
-  }
-  if (!params.keys) {
-    return Promise.reject('[opGet]: param.keys undefined');
-  }
-  if(params.keys.length === 0) {
-    return Promise.resolve([]);
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    var keys = params.keys.map(function (k) {
-      return siftGuid + '/' + k;
-    });
-    return _findIn(dbs.msg, { bucket: params.bucket, keys: keys }).then(function (result) {
-      return result.map(function (r) {
-        return { key: r.key.split('/')[1], value: r.value };
-      });
-    });
-  }
-  return _findIn(dbs.db, params);
-}
-
-// Get All
-function opGetAll(dbs, params, siftGuid) {
-  logger.trace('[opGetAll]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opGetAll]: params.bucket undefined');
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, true)
-      .then(function (result) { return result.map(function (r) { return ({ key: r.key.split('/')[1], value: r.value }); }); }
-      );
-  }
-  return _getAll(dbs.db, params, true);
-}
-
-// Get All Keys
-function opGetAllKeys(dbs, params, siftGuid) {
-  logger.trace('[opGetAllKeys]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opGetAllKeys]: params.bucket undefined');
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, false)
-      .then(function (result) { return result.map(function (r) { return r.key.split('/')[1]; }); });
-  }
-  return _getAll(dbs.db, params, false);
-}
-
-// Get Index
-function opGetIndex(dbs, params, siftGuid) {
-  logger.trace('[opGetIndex]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opGetIndex]:params.bucket undefined');
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, true).then(function (result) {
-      return result.map(function (r) {
-        return { key: r.key.split('/')[1], value: r.value };
-      });
-    });
-  }
-  if (!params.index) {
-    return Promise.reject('[opGetIndex]:params.index undefined');
-  }
-  return _getAll(dbs.db, params, true);
-}
-
-// Get Index Keys
-function opGetIndexKeys(dbs, params, siftGuid) {
-  logger.trace('[opGetIndexKeys]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opGetIndexKeys]: params.bucket undefined');
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    return _getAll(dbs.msg, { bucket: params.bucket, index: 'sift.guid', range: siftGuid }, false).then(function (result) {
-      return result.map(function (r) {
-        return { key: r.key.split('/')[1], value: r.value };
-      });
-    });
-  }
-  if (!params.index) {
-    return Promise.reject('[opGetIndexKeys]: params.index undefined');
-  }
-  return _getAll(dbs.db, params, false);
-}
-
-// Get With Index
-function opGetWithIndex(dbs, params, siftGuid) {
-  logger.trace('[opGetWithIndex]: ', params, siftGuid);
-  if (!params.bucket) {
-    return Promise.reject('[opGetWithIndex]:params.bucket undefined');
-  }
-  if (!params.keys) {
-    return Promise.reject('[opGetWithIndex]:params.keys undefined');
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    var keys = params.keys.map(function (k) {
-      return siftGuid + '/' + k;
-    });
-    return _getWithIndexRange(dbs.msg, { bucket: params.bucket, keys: keys, index: 'sift.guid', range: siftGuid }).then(function (result) {
-      return result.map(function (r) {
-        return { key: r.key.split('/')[1], value: r.value };
-      });
-    });
-  }
-  if (!params.index) {
-    return Promise.reject('[opGetWithIndex]:params.index undefined');
-  }
-  if (!params.range) {
-    return Promise.reject('[opGetWithIndex]:params.range undefined');
-  }
-  return _getWithIndexRange(dbs.db, params);
-}
-
-// Put
-function opPut(dbs, params, raw, siftGuid) {
-  logger.trace('[opPut]: ', params, raw, siftGuid);
-  var db = dbs.db;
-  if (!params.bucket) {
-    return Promise.reject('[opPut]: params.bucket undefined');
-  }
-  if (!params.kvs || params.kvs.length === 0) {
-    logger.warn('[opPut]: params.kvs undefined');
-    return Promise.resolve();
-  }
-  var kvs = params.kvs;
-  if (!raw) {
-    // Wrap value into a {value: object}
-    kvs = kvs.map(function (kv) {
-      return { key: kv.key, value: { value: kv.value } };
-    });
-  }
-  if (EMAIL_BUCKETS.indexOf(params.bucket) !== -1) {
-    db = dbs.msg;
-    var kvs = kvs.map(function (kv) {
-      return { key: siftGuid + '/' + kv.key, value: kv.value };
-    });
-  }
-  return _batchPut(db, { bucket: params.bucket, kvs: kvs }, raw);
-}
-
-/*****************************************************************
- * Internal functions
- *****************************************************************/
-
-// define db schema
-function _getTreoSchema(stores, sift) {
-  logger.trace('[_getTreoSchema]: ', stores, sift);
-  var schema = treo.schema().version(1);
-  stores.forEach(function (os) {
-    if (!(sift && (EMAIL_BUCKETS.indexOf(os.name) !== -1))) {
-      if (os.keypath) {
-        schema = schema.addStore(os.name, { key: os.keypath });
-      }
-      else {
-        schema = schema.addStore(os.name);
-      }
-      if (os.indexes) {
-        os.indexes.forEach(function (idx) {
-          schema = schema.addIndex(idx, idx, { unique: false });
-        });
-      }
-    }
-  });
-  return schema;
-}
-
-// versioned db schema
-function _getVersionedTreoSchema(versions, sift) {
-  logger.trace('[_getVersionedTreoSchema]: ', versions, sift);
-  var schema = treo.schema();
-  versions.forEach(function (stores, i) {
-    schema = schema.version(i + 1);
-    stores.forEach(function (os) {
-      if (!(sift && (EMAIL_BUCKETS.indexOf(os.name) !== -1))) {
-        if (os.drop) {
-          logger.trace('[_getVersionedTreoSchema]: dropping store: ', os.name);
-          schema = schema.dropStore(os.name);
-        }
-        else if (os.keypath) {
-          schema = schema.addStore(os.name, { key: os.keypath });
-        }
-        else {
-          schema = schema.addStore(os.name);
-        }
-        if (os.indexes) {
-          os.indexes.forEach(function (idx) {
-            if (os.drop) {
-              logger.trace('[_getVersionedTreoSchema]: dropping store/index: ' + os.name + '/' + idx);
-              schema = schema.dropIndex(idx);
-            }
-            else {
-              schema = schema.addIndex(idx, idx, { unique: false });
-            }
-          });
-        }
-      }
-    });
-  });
-  return schema;
-}
-
-// Batch deletion supports numeric keys
-function _batchDelete(db, params) {
-  logger.trace('[_batchDelete]: ', params);
-  return new Promise(function (resolve, reject) {
-    db.transaction('readwrite', [params.bucket], function (err, tr) {
-      if (err) { return reject(err); }
-      var store = tr.objectStore(params.bucket);
-      var current = 0;
-      var next = function () {
-        if (current >= params.keys.length) { return; }
-        var currentKey = params.keys[current];
-        var req;
-        req = store.delete(currentKey);
-        req.onerror = reject;
-        req.onsuccess = next;
-        current += 1;
-      };
-      tr.onerror = tr.onabort = reject;
-      tr.oncomplete = function () { resolve(); };
-      next();
-    });
-  });
-}
-
-function _batchPut(db, params) {
-  logger.trace('[_batchPut]: ', params);
-  return new Promise(function (resolve, reject) {
-    var count = params.kvs.length;
-    db.transaction('readwrite', [params.bucket], function (err, tr) {
-      if (err) { return reject(err); }
-      var store = tr.objectStore(params.bucket);
-      var current = 0;
-      var next = function () {
-        if (current >= count) { return; }
-        logger.trace('[_batchPut: put: ', params.kvs[current]);
-        var req;
-        req = store.put(params.kvs[current].value, params.kvs[current].key);
-        req.onerror = reject;
-        req.onsuccess = next;
-        current += 1;
-      };
-      tr.onerror = tr.onabort = reject;
-      tr.oncomplete = function () { resolve(); };
-      next();
-    });
-  });
-}
-
-function _getWithIndexRange(db, params) {
-  logger.trace('[_getWithIndexRange]: ', params);
-  return new Promise(function (resolve, reject) {
-    var store = db.store(params.bucket);
-    var result = [];
-    var found = 0;
-    var iterator = function (cursor) {
-      var ki = params.keys.indexOf(cursor.primaryKey);
-      if (ki !== -1) {
-        logger.trace('[found key: ', cursor.primaryKey);
-        result[ki].value = cursor.value.value;
-        found++;
-      }
-      if (found === params.keys.length) {
-        return done();
-      }
-      cursor.continue();
-    };
-    var done = function (err) {
-      logger.trace('[_getWithIndexRange: result: ', result);
-      err ? reject(err) : resolve(result);
-    };
-    params.keys.forEach(function (k) {
-      result.push({ key: k, value: undefined });
-    });
-    store.cursor({ index: params.index, range: params.range, iterator: iterator }, done);
-  });
-}
-
-function _findIn(db, params) {
-  logger.trace('[_findIn]: ', params);
-  return new Promise(function (resolve, reject) {
-    var store = db.store(params.bucket);
-    var result = [];
-    var current = 0;
-    var iterator = function (cursor) {
-      logger.trace('[_findIn]: iterator: ', cursor);
-      if (cursor.key > sKeys[current]) {
-        logger.trace('[_findIn]: cursor ahead: ', cursor.key, sKeys[current]);
-        while (cursor.key > sKeys[current] && current < sKeys.length) {
-          current += 1;
-          logger.trace('[_findIn]: moving to next key: ', cursor.key, sKeys[current]);
-        }
-        if (current > sKeys.length) {
-          logger.trace('[_findIn]: exhausted keys. done.');
-          return done();
-        }
-      }
-      if (cursor.key === sKeys[current]) {
-        logger.trace('[_findIn]: found key: ', cursor.key, cursor.value);
-        result[params.keys.indexOf(sKeys[current])] = { key: cursor.key, value: cursor.value.value };
-        current += 1;
-        (current < sKeys.length) ? cursor.continue(sKeys[current]) : done();
-      }
-      else {
-        logger.trace('[_findIn]: continuing to next key: ', sKeys[current]);
-        cursor.continue(sKeys[current]); // go to next key
-      }
-    };
-    var done = function (err) {
-      logger.trace('[findIn]: result: ', result);
-      err ? reject(err) : resolve(result);
-    };
-    var sKeys = params.keys.slice();
-    sKeys = sKeys.sort(treo.cmp);
-    logger.trace('[findIn: sorted keys: ', sKeys);
-    params.keys.forEach(function (k) {
-      result.push({ key: k, value: undefined });
-    });
-    store.cursor({ iterator: iterator }, done);
-  });
-}
-
-function _getAll(db, params, loadValue) {
-  logger.trace('[_getAll]: ', params, loadValue);
-  return new Promise(function (resolve, reject) {
-    var result = [];
-    var keys = [];
-    var store = db.store(params.bucket);
-    var iterator = function (cursor) {
-      var kv = { key: cursor.primaryKey };
-      logger.trace('[_getAll]: cursor', cursor);
-      if (loadValue) {
-        kv.value = cursor.value.value;
-      }
-      if (params.index) {
-        kv.index = cursor.key;
-      }
-      result.push(kv);
-      keys.push(cursor.primaryKey);
-      cursor.continue();
-    };
-    var opts = { iterator: iterator };
-    if (params.index) {
-      opts.index = params.index;
-    }
-    if (params.range) {
-      opts.range = params.range;
-    }
-    store.cursor(opts, function (err) {
-      if (err) {
-        reject(err);
-      }
-      else {
-        if (!params.index && !params.range && !loadValue) {
-          logger.trace('[_getAll]: resolving: ', keys);
-          resolve(keys);
-        }
-        else {
-          logger.trace('[_getAll]: resolving: ', result);
-          resolve(result);
-        }
-      }
-    });
-  });
-}
 
 /**
  * Redsift SDK. Sift Storage module.
@@ -1641,275 +1221,114 @@ function _getAll(db, params, loadValue) {
  *
  * Copyright (c) 2016 Redsift Limited. All rights reserved.
  */
-var _siftGuid = new WeakMap();
-var _dbs = new WeakMap();
 
-var Storage = function Storage(dbInfo, ll) {
-  this._logger = loglevel$1.getLogger('RSStorage');
-  this._logger.setLevel(ll || 'warn');
-  if (!dbInfo.accountGuid) {
-    throw new Error('[Storage]: dbInfo.accountGuid undefined');
-  }
-  _siftGuid.set(this, dbInfo.siftGuid);
-  _dbs.set(this, opCreateDb(dbInfo));
-};
-
-/*****************************************************************
- * External Operations
- *****************************************************************/
-Storage.prototype.get = function get (params) {
-  this._logger.trace('[Storage::get]: ', params);
-  return opGet(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.getAll = function getAll (params) {
-  this._logger.trace('[Storage::getAll]: ', params);
-  return opGetAll(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.getAllKeys = function getAllKeys (params) {
-  this._logger.trace('[Storage::getAllKeys]: ', params);
-  return opGetAllKeys(_dbs.get(this), params, _siftGuid.get(this))
-};
-
-Storage.prototype.getIndex = function getIndex (params) {
-  this._logger.trace('[Storage::getIndex]: ', params);
-  return opGetIndex(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.getIndexKeys = function getIndexKeys (params) {
-  this._logger.trace('[Storage::getIndexKeys]: ', params);
-  return opGetIndexKeys(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.getWithIndex = function getWithIndex (params) {
-  this._logger.trace('[Storage::getWithIndex]: ', params);
-  return opGetWithIndex(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Sift-only operations
-///////////////////////////////////////////////////////////////////////////////////////////////
-Storage.prototype.delUser = function delUser (params) {
-  params.bucket = '_user.default';
-  this._logger.trace('[Storage::delUser]: ', params);
-  return opDel(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.getUser = function getUser (params) {
-  params.bucket = '_user.default';
-  this._logger.trace('[Storage::getUser]: ', params);
-  return opGet(_dbs.get(this), params, _siftGuid.get(this));
-};
-
-Storage.prototype.putUser = function putUser (params) {
-  params.bucket = '_user.default';
-  this._logger.trace('[Storage::putUser]: ', params);
-  if (!params.kvs || params.kvs.length === 0) {
-    return Promise.reject('[Storage::putUser]: params.kvs undefined');
-  }
-  return opPut(_dbs.get(this), params, false, _siftGuid.get(this));
-};
-
-var SiftController = function SiftController() {
-  this._proxy = self;
-  this.view = new Observable();
-  this.emailclient = new EmailClient(self);
-  this._registerMessageListeners();
-};
-
-SiftController.prototype.publish = function publish (topic, value) {
-  this._proxy.postMessage({
-    method: 'notifyView',
-    params: {
-      topic: topic,
-      value: value
-    }
-  });
-};
-
-SiftController.prototype._registerMessageListeners = function _registerMessageListeners () {
-    var this$1 = this;
-
-  if (!this._proxy) return;
-  this._proxy.onmessage = function (e) {
-    // console.log('[SiftController::onmessage]: ', e.data);
-    var method = e.data.method;
-    if (this$1['_' + method]) {
-      this$1['_' + method](e.data.params);
-    }
-    else {
-      // console.log('[SiftController:onmessage]: method not implemented: ', method);
-    }
-  };
-};
-
-SiftController.prototype._init = function _init (params) {
-  // console.log('[SiftController::_init]: ', params);
-  this.storage = new SiftStorage();
-  this.storage.init(
-    new Storage({
-      type: 'SIFT',
-      siftGuid: params.siftGuid,
-      accountGuid: params.accountGuid,
-      schema: params.dbSchema
-    })
-  );
-  // Initialise sift details
-  this._guid = params.siftGuid;
-  this._account = params.accountGuid;
-  // Init is done, post a message to the iframe_controller
-  this._proxy.postMessage({
-    method: 'initCallback',
-    result: params
-  });
-};
-
-SiftController.prototype._terminate = function _terminate () {
-  if (!this._proxy) return;
-  // console.log('[SiftController::_terminate]');
-  this._proxy.close();
-};
-
-SiftController.prototype._postCallback = function _postCallback (params, _result) {
-  this._proxy.postMessage({
-    method: 'loadViewCallback',
-    params: {
-      user: { guid: this._account },
-      sift: { guid: this._guid },
-      type: params.type,
-      sizeClass: params.sizeClass,
-      result: _result
-    }
-  });
-};
-
-SiftController.prototype._loadView = function _loadView (params) {
-    var this$1 = this;
-
-  // console.log('[SiftController::_loadView]: ', params);
-  if (!this.loadView) {
-    console.error('[SiftController::_loadView]: Sift controller must implement the loadView method');
-    return;
-  }
-  // Invoke loadView method
-  var result = this.loadView({
-    sizeClass: params.sizeClass,
-    type: params.type,
-    params: params.data
-  });
-  // console.log('[SiftController::_loadView] loadView result: ', result);
-  if (result.data && 'function' === typeof result.data.then) {
-    if (result.html) {
-      this._postCallback(params, { html: result.html });
-    }
-    result.data.then(function (data) {
-      this$1._postCallback(params, { html: result.html, data: data });
-    }).catch(function (error) {
-      console.error('[SiftController::loadView]: promise rejected: ', error);
-    });
-  }
-  else {
-    this._postCallback(params, result);
-  }
-};
-
-SiftController.prototype._storageUpdated = function _storageUpdated (params) {
-    var this$1 = this;
-
-  // console.log('[SiftController::_storageUpdated]: ', params);
-  // Notify the * listeners
-  this.storage.publish('*', params);
-  params.forEach(function (b) {
-    // Notify the bucket listeners.
-    // TODO: send the list of keys instead of "[b]"
-    this$1.storage.publish(b, [b]);
-  });
-};
-
-SiftController.prototype._notifyController = function _notifyController (params) {
-  // console.log('[SiftController::_notifyController]: ', params);
-  this.view.publish(params.topic, params.value);
-};
-
-SiftController.prototype._emailComposer = function _emailComposer (params) {
-  // console.log('[SiftController::_emailComposer]: ', params);
-  this.emailclient.publish(params.topic, params.value);
-};
-
-function registerSiftController(siftController) {
-  console.log('[Redsift::registerSiftController]: registered');
+/**
+ * SiftView
+ */
+function registerSiftView(siftView) {
+  console.log('[Redsift::registerSiftView]: registered');
 }
 
-var MyController = (function (SiftController) {
-  function MyController() {
-    console.log('sift-ocado: controller: init');
+function cardCreator(data){
+  var familyExamples = {
+    Cruciferous: 'broccoli, kale, cauliflower',
+    'Green leafy': 'lettuce, spinach, parsley',
+    Allium: 'onion, garlic, leek',
+    'Yellow/Orange': 'pumpkin, butternut squash',
+    Citrus: 'orange, lemon, grapefruit',
+    Berry: 'strawberries, blackberries'
+  };
+  var parent = document.querySelector('#nscore');
+  if(!parent) {
+    console.error('missing parent node from html');
+    return
+  }
+  parent.innerHTML = '';
+  Object.keys(data).forEach(function (k) {
+    var node = document.querySelector('#card-template');
+    if(!node) {
+      console.error('missing template node from html');
+      return
+    }
+    var ct = document.querySelector('#card-template').cloneNode(true);
+    var recBox = ct.content.querySelector('.card__box--recommend');
+    var recBoxItems = recBox.querySelector('.card__box__items');
+    var boughtBoxItems = ct.content.querySelector('.card__box--bought .card__box__items');
+    var parentCard = ct.content.querySelector('.card');
+    parentCard.classList.add('card--' + k.toLowerCase().replace(/\/|\s/, '-'));
+    ct.content.querySelector('.card__family__name').innerHTML = k;
+    ct.content.querySelector('.card__family__examples').innerHTML = [familyExamples[k], '...'].join(', ');
+    var s = data[k].suggestions;
+    if(s.length > 0){
+      var e = Math.floor(Math.random() * s.length);
+      recBoxItems.appendChild(createItem(s[e].name, s[e].score));
+    }else{
+      var starTemp = document.querySelector('#item-star');
+      recBox.innerHTML = '';
+      recBox.appendChild(document.importNode(starTemp.content, true));
+    }
+
+    var f = data[k].found;
+    if(f.length > 0){
+      f.map(function (d) { return boughtBoxItems.appendChild(createItem(d.name, d.score)); })
+    }
+
+    parent.appendChild(document.importNode(ct.content, true));
+  });
+}
+
+function createItem(name, score){
+  var node = document.querySelector('#item-template');
+  if(!node) {
+    console.error('missing template node from html');
+    return;
+  }
+  var t = node.cloneNode(true);
+  t.content.querySelector('.item__name .item__name__label').innerHTML = name;
+  t.content.querySelector('.item__score').innerHTML = score + "%";
+  // 230px - 45px(number) = 185px / 100 = 1.9
+  t.content.querySelector('.item__name').style.flex = "0 1 " + (1.85 * score) + "px";
+  return document.importNode(t.content, true)
+}
+
+var DetailView = (function (SiftView) {
+  function DetailView() {
     // You have to call the super() method to initialize the base class.
-    SiftController.call(this);
+    SiftView.call(this);
+    this.controller.subscribe('suggestionsupdated', this.recalc.bind(this));
   }
 
-  if ( SiftController ) MyController.__proto__ = SiftController;
-  MyController.prototype = Object.create( SiftController && SiftController.prototype );
-  MyController.prototype.constructor = MyController;
+  if ( SiftView ) DetailView.__proto__ = SiftView;
+  DetailView.prototype = Object.create( SiftView && SiftView.prototype );
+  DetailView.prototype.constructor = DetailView;
 
-  MyController.prototype.loadView = function loadView (value) {
-    console.log('sift-ocado: controller: loadView: ', value);
-    this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
-    this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
-    switch (value.type) {
-      case 'email-thread':
-        return {
-          html: 'detail.html',
-          data: value.params.detail
-        };
-      case 'summary':
-        return {
-          html: 'view.html',
-          data: this.startupFetch()
-        };
-      default:
-        console.error('sift-ocado: unknown Sift type: ', value.type);
+  DetailView.prototype.presentView = function presentView (got) {
+    console.log('sift-ocado: detail got', got)
+    this.updateView(got.data);
+  };
+
+  DetailView.prototype.recalc = function recalc (got) {
+    console.log('sift-ocado: recalc got', got);
+    this.updateView(got);
+  };
+
+  DetailView.prototype.willPresentView = function willPresentView () {};
+
+  DetailView.prototype.updateView = function updateView (data){
+    if(data) {
+      var keys = Object.keys(data);
+      var e = Math.floor(Math.random() * keys.length);
+      var r = {};
+      r[keys[e]] = data[keys[e]];
+      cardCreator(r);
     }
   };
 
-  MyController.prototype.fetchCount = function fetchCount (){
-    return this.storage.getAll({ bucket: 'count' });
-  };
+  return DetailView;
+}(SiftView));
 
-  MyController.prototype.onCountUpdate = function onCountUpdate (value) {
-    var this$1 = this;
+registerSiftView(new DetailView(window));
 
-    console.log('sift-ocado: controller: onCountUpdate: ', value);
-    this.fetchCount().then(function (v) {
-      this$1.publish('countupdated', v);
-    });
-  };
-
-  MyController.prototype.fetchSuggestions = function fetchSuggestions (){
-    return this.storage.get({
-      keys: ['families'],
-      bucket: 'suggestions'
-    }).then(function (d) { return JSON.parse(d[0].value); });
-  };
-  MyController.prototype.onSuggestionsUpdate = function onSuggestionsUpdate (value) {
-    var this$1 = this;
-
-    console.log('sift-ocado: controller: onSuggestionsUpdate: ', value);
-    this.fetchSuggestions().then(function (v) {
-      this$1.publish('suggestionsupdated', v);
-    });
-  };
-
-  MyController.prototype.startupFetch = function startupFetch (){
-    return Promise.all([this.fetchCount(), this.fetchSuggestions()])
-    .then(function (d) { return ({count: d[0], suggestions: d[1]}); })
-  };
-
-  return MyController;
-}(SiftController));
-
-registerSiftController(new MyController());
-
-return MyController;
+return DetailView;
 
 })));

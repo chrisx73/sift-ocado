@@ -1856,10 +1856,20 @@ var MyController = (function (SiftController) {
     console.log('sift-ocado: controller: loadView: ', value);
     this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
     this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
-    return {
-      html: 'view.html',
-      data: this.startupFetch()
-    };
+    switch (value.type) {
+      case 'email-thread':
+        return {
+          html: 'detail.html',
+          data: value.params.detail
+        };
+      case 'summary':
+        return {
+          html: 'view.html',
+          data: this.startupFetch()
+        };
+      default:
+        console.error('sift-ocado: unknown Sift type: ', value.type);
+    }
   };
 
   MyController.prototype.fetchCount = function fetchCount (){
