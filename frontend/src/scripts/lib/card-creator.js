@@ -40,6 +40,8 @@ export function cardCreator(data){
     const f = data[k].found;
     if(f.length > 0){
       f.map(d => boughtBoxItems.appendChild(createItem(d.name, d.score)))
+    }else{
+      boughtBoxItems.innerHTML = 'Nothing in your history from this category';
     }
 
     parent.appendChild(document.importNode(ct.content, true));
@@ -55,7 +57,7 @@ function createItem(name, score){
   const t = node.cloneNode(true);
   t.content.querySelector('.item__name .item__name__label').innerHTML = name;
   t.content.querySelector('.item__score').innerHTML = `${score}%`;
-  // 230px - 45px(number) = 185px / 100 = 1.9
-  t.content.querySelector('.item__name').style.flex = `0 1 ${1.85 * score}px`;
+  // 230px - 55px(number) = 175px / 100 = 1.75
+  t.content.querySelector('.item__name').style.flex = `0 1 ${1.75 * score}px`;
   return document.importNode(t.content, true)
 }
