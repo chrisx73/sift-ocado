@@ -1856,11 +1856,16 @@ var MyController = (function (SiftController) {
     console.log('sift-ocado: controller: loadView: ', value);
     this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
     this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
+    var detail = [];
+    try{
+      detail = value.params.detail;
+    }catch(e){}
+
     switch (value.type) {
       case 'email-thread':
         return {
           html: 'detail.html',
-          data: value.params.detail
+          data: detail
         };
       case 'summary':
         return {
@@ -1889,7 +1894,15 @@ var MyController = (function (SiftController) {
     return this.storage.get({
       keys: ['families'],
       bucket: 'suggestions'
-    }).then(function (d) { return JSON.parse(d[0].value); });
+    }).then(function (d) {
+      var r = [];
+      try{
+        r = JSON.parse(d[0].value);
+      }catch(e){
+        console.warn('no data for suggestions');
+      }
+      return r;
+    });
   };
   MyController.prototype.onSuggestionsUpdate = function onSuggestionsUpdate (value) {
     var this$1 = this;

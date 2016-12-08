@@ -1831,11 +1831,16 @@ class MyController extends SiftController {
     console.log('sift-ocado: controller: loadView: ', value);
     this.storage.subscribe(['count'], this.onCountUpdate.bind(this));
     this.storage.subscribe(['suggestions'], this.onSuggestionsUpdate.bind(this));
+    let detail = [];
+    try{
+      detail = value.params.detail;
+    }catch(e){}
+
     switch (value.type) {
       case 'email-thread':
         return {
           html: 'detail.html',
-          data: value.params.detail
+          data: detail
         };
       case 'summary':
         return {
@@ -1862,7 +1867,15 @@ class MyController extends SiftController {
     return this.storage.get({
       keys: ['families'],
       bucket: 'suggestions'
-    }).then(d => JSON.parse(d[0].value));
+    }).then(d => {
+      let r = [];
+      try{
+        r = JSON.parse(d[0].value);
+      }catch(e){
+        console.warn('no data for suggestions');
+      }
+      return r;
+    });
   }
   onSuggestionsUpdate (value) {
     console.log('sift-ocado: controller: onSuggestionsUpdate: ', value);

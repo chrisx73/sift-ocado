@@ -10439,8 +10439,9 @@ var CreateView = (function (SiftView) {
 
   CreateView.prototype.onResize = function onResize () {
     var content = document.querySelector('.content__container--expand');
+    var e = this._counts || [];
     select('#expense')
-      .datum(this._counts)
+      .datum(e)
       .call(this._expense.width(content.clientWidth * 0.8));
   };
 
@@ -10453,7 +10454,9 @@ var CreateView = (function (SiftView) {
   };
 
   CreateView.prototype.renderCardsSection = function renderCardsSection (data){
-    console.log('the data', data);
+    if (data.length === 0){
+      return;
+    }
     this.removeEmptyState();
     cardCreator(data);
   };
