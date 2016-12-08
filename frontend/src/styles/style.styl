@@ -1,10 +1,6 @@
 @import "@redsift/ui-rs-core/dist/css/ui-rs-core.min.css"
 @import "@redsift/ui-rs-hero/dist/css/ui-rs-hero.min.css"
 
-body, html {
-  height: 100%;
-}
-
 .-bg-hero {
   background-image: url('../../assets/panorama_day.jpg');
   background-color: rgb(42, 24, 22);
@@ -22,6 +18,9 @@ body, html {
     url('../../assets/panorama_day_2x.jpg') 2x
   )
 }
+
+.content
+  height: 100%
 
 .logo
   width: 60px
@@ -223,14 +222,20 @@ h3.card__family__name
     width: auto
 
 @media (max-width: 50em)
-  .content
+  body
     height: 100%
-    box-sizing: border-box
+  .content
+    padding:0
+    .ocado-container
+      margin:0
 
   .hero
     display: none
 
   .hero-sticky-header
+    display: none
+  
+  .scores-container
     display: none
   
   .card--yellow-orange
