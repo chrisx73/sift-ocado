@@ -18,6 +18,9 @@
     url('../../assets/panorama_day_2x.jpg') 2x
   )
 }
+body{
+  background-color:#f7f7f7
+}
 
 .content
   height: 100%
@@ -84,6 +87,7 @@
   align-items: center
   width: 230px
   min-height: 230px
+  background-color: white
 
 .card__family
   border-bottom: 1px solid black
@@ -154,7 +158,7 @@ h3.card__family__name
   height: 30px
   padding-right: 1.5em
 
-.scoresinfo p 
+.scoresinfo .footer
   padding: 2em;
 
 .card--cruciferous
@@ -222,8 +226,6 @@ h3.card__family__name
     width: auto
 
 @media (max-width: 50em)
-  body
-    height: 100%
   .content
     padding:0
     .ocado-container
