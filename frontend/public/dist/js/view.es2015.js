@@ -10526,9 +10526,24 @@ class CreateView extends SiftView {
   onResize() {
     const content = document.querySelector('.content__container--expand');
     const e = this._counts || [];
+    const w = content.clientWidth * 0.8;
+    let dat = e.slice(-12);
+    let barSize = 6;
+    let barSizeCoefficient = 0.7;
+    if(w < 230){
+      dat = e.slice(-2);
+      barSizeCoefficient = 0.2
+      barSize = Math.floor(w / (dat.length + 1) * barSizeCoefficient);
+    }else if(w < 480){
+      dat = e.slice(-8);
+      barSizeCoefficient = 0.5;
+      barSize = Math.floor(w / (dat.length + 1) * barSizeCoefficient);
+    }else{
+      barSize = Math.floor(w / (dat.length + 1) * barSizeCoefficient);
+    }
     select('#expense')
-      .datum(e)
-      .call(this._expense.width(content.clientWidth * 0.8));
+      .datum(dat)
+      .call(this._expense.width(w).barSize(barSize));
   }
 
   /**
