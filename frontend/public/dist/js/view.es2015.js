@@ -10504,12 +10504,26 @@ class CreateView extends SiftView {
 
   renderTotalSection(data){
     const parseTime = utcParse('%Y%m');
-    this._counts = data.map(function (e) {
-      return {
-        l: parseTime(e.key).getTime(),
-        v: [e.value]
-      };
+    moment.utc();
+    let months = {};
+    for(var i = 0; i < 12; i++){
+      const a = moment().subtract(i, 'months').format('YYYYMM');
+      months[a] = null;
+    }
+    // find the earliest date we have data for the last year
+    let min = Infinity;
+    data.forEach(d => {
+      min = Math.min(min, d.key);
+      months[d.key] = d.value
     });
+
+    this._counts = Object.keys(months)
+      .filter(k => k >= min)
+      .map(d => ({
+        l: parseTime(d).getTime(),
+        v: months[d] ? [months[d]] : []
+      }))
+
 
     if(!this._expense) {
       this._expense = bars('monthly')
