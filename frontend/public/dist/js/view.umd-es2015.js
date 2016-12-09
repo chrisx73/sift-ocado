@@ -10389,6 +10389,58 @@ function createItem(name, score){
   return document.importNode(t.content, true)
 }
 
+var Watercress = {"plural":"watercress","query":"watercress"};
+var Chard = {"plural":"chard","query":"chard"};
+var Spinach = {"plural":"spinach","query":"spinach"};
+var Chicory = {"plural":"chicory","query":"chicory"};
+var Parsley = {"plural":"parsley","query":"parsley"};
+var Kale = {"plural":"kale","query":"kale"};
+var Broccoli = {"plural":"broccoli","query":"broccoli"};
+var Pumpkin = {"plural":"pumpkin","query":"pumpkin"};
+var Kohlrabi = {"plural":"kohlrabi","query":"kohlrabi"};
+var Cauliflower = {"plural":"cauliflower","query":"cauliflower"};
+var Cabbage = {"plural":"cabbage","query":"cabbage"};
+var Carrot = {"plural":"carrots","query":"carrot"};
+var Tomato = {"plural":"tomatoes","query":"tomato"};
+var Lemon = {"plural":"lemons","query":"lemon"};
+var Strawberry = {"plural":"strawberries","query":"strawberry"};
+var Radish = {"plural":"radish","query":"radish"};
+var Orange = {"plural":"oranges","query":"orange"};
+var Lime = {"plural":"limes","query":"lime"};
+var Grapefruit = {"plural":"grapefruits","query":"grapefruit"};
+var Turnip = {"plural":"turnips","query":"turnip"};
+var Blackberry = {"plural":"blackberries","query":"blackberry"};
+var Leek = {"plural":"leek","query":"leek"};
+var ingredients = {
+	Watercress: Watercress,
+	Chard: Chard,
+	Spinach: Spinach,
+	Chicory: Chicory,
+	Parsley: Parsley,
+	Kale: Kale,
+	Broccoli: Broccoli,
+	Pumpkin: Pumpkin,
+	Kohlrabi: Kohlrabi,
+	Cauliflower: Cauliflower,
+	Cabbage: Cabbage,
+	Carrot: Carrot,
+	Tomato: Tomato,
+	Lemon: Lemon,
+	Strawberry: Strawberry,
+	Radish: Radish,
+	Orange: Orange,
+	Lime: Lime,
+	Grapefruit: Grapefruit,
+	Turnip: Turnip,
+	Blackberry: Blackberry,
+	Leek: Leek,
+	"Chinese cabbage": {"plural":"chinese cabbage","query":"chinese_cabbage"},
+	"Dandelion green": {"plural":"dandelion","query":"dandelion"},
+	"Brussels sprout": {"plural":"brussels sprouts","query":"brussels_sprouts"},
+	"Iceberg lettuce": {"plural":"iceberg lettuce","query":"iceberg_lettuce"},
+	"Sweet potato": {"plural":"sweet potatoes","query":"sweet_potato"}
+};
+
 var CreateView = (function (SiftView) {
   function CreateView() {
     // You have to call the super() method to initialize the base class.
@@ -10458,12 +10510,20 @@ var CreateView = (function (SiftView) {
       return;
     }
     this.removeEmptyState();
+    this.recipeSuggestion();
     cardCreator(data);
   };
 
   CreateView.prototype.removeEmptyState = function removeEmptyState (){
     document.querySelector('.scoresinfo').classList.remove('hide');
-    document.querySelector('#hero-message').style.display = 'none';
+  };
+
+  CreateView.prototype.recipeSuggestion = function recipeSuggestion (){
+    var fArray = Object.keys(ingredients);
+    var randomF = Math.floor(Math.random() * fArray.length);
+    var pickedF = ingredients[fArray[randomF]];
+    var node = document.querySelector('#hero-message');
+    node.innerHTML = "Next time try a <a target=\"_blank\" href=\"http://www.bbc.co.uk/food/" + (pickedF.query) + "\">recipe</a> with " + (pickedF.plural) + "...";
   };
 
   /**
