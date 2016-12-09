@@ -8,7 +8,8 @@ import { html as bars } from '@redsift/d3-rs-bars';
 import { select } from 'd3-selection';
 import { utcParse } from 'd3-time-format';
 import '@redsift/ui-rs-hero';
-import {cardCreator} from './lib/card-creator.js';
+import {cardCreator} from './lib/card-creator';
+import ingredients from './ingredients.json';
 
 var PFV_LINK = 'https://www.cdc.gov/pcd/issues/2014/13_0390.htm';
 var GOOGLE_SEARCH_TEMPLATE = 'https://www.google.co.uk/search?q=';
@@ -78,12 +79,20 @@ export default class CreateView extends SiftView {
       return;
     }
     this.removeEmptyState();
+    this.recipeSuggestion();
     cardCreator(data);
   }
 
   removeEmptyState(){
     document.querySelector('.scoresinfo').classList.remove('hide');
-    document.querySelector('#hero-message').style.display = 'none';
+  }
+
+  recipeSuggestion(){
+    const fArray = Object.keys(ingredients);
+    const randomF = Math.floor(Math.random() * fArray.length);
+    const pickedF = ingredients[fArray[randomF]];
+    const node = document.querySelector('#hero-message');
+    node.innerHTML = `Next time try a <a target="_blank" href="http://www.bbc.co.uk/food/${pickedF.query}">recipe</a> with ${pickedF.plural}...`;
   }
 
   /**
