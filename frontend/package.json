@@ -1,0 +1,31 @@
+{
+  "name": "sift-ocado",
+  "version": "1.0.0",
+  "description": "## Development setup",
+  "main": "bundle.config.js",
+  "scripts": {
+    "build": "gulp build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisx73/sift-ocado.git"
+  },
+  "author": "Christian Miccio",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrisx73/sift-ocado/issues"
+  },
+  "homepage": "https://github.com/chrisx73/sift-ocado#readme",
+  "dependencies": {
+    "@redsift/d3-rs-bars": "^0.2.0",
+    "@redsift/ui-rs-hero": "^0.4.0",
+    "d3-selection": "^1.0.3",
+    "d3-time-format": "^2.0.3"
+  },
+  "devDependencies": {
+    "@redsift/redsift-bundler": "0.5.5",
+    "@redsift/sift-sdk-web": "0.7.0",
+    "gulp": "3.9.1"
+  }
+}

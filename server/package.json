@@ -1,0 +1,9 @@
+{
+	"name": "sift-ocado",
+	"display-name": "Sift Ocado",
+	"description": "",
+	"author": "",
+	"version": "1.0.0",
+    "#": "Please use 'redsift npm' instead of system 'npm' ",
+	"dependencies": {}
+}

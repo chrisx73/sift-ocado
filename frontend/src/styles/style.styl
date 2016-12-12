@@ -1,0 +1,254 @@
+@import "@redsift/ui-rs-core/src/index.import"
+@import "@redsift/ui-rs-hero/dist/css/ui-rs-hero.min.css"
+
+$cdn = {
+  assets: "https://static.redsift.io/assets/sifts/sift-ocado"
+};
+$enable-webp = false;
+$fileName = "/farm-romania";
+
+
+.bg-hero{
+  bg-webp($fileName, "jpg", $enable-webp, $cdn.assets,
+          linear-gradient(180deg, rgba(0, 0, 0, .40), rgba(0, 0, 0, .40)));
+  bg-retina-webp($fileName, "jpg", $enable-webp, $cdn.assets,
+          linear-gradient(180deg, rgba(0, 0, 0, .40), rgba(0, 0, 0, .40))); 
+}
+
+
+.hero-sticky-header--active
+  box-shadow: 0px 0px 2px 2px rgba(0, 0, 0, 0.15);
+  bg-webp($fileName, "jpg", $enable-webp, $cdn.assets,
+          linear-gradient(180deg, rgba(0, 0, 0, .40), rgba(0, 0, 0, .40)));
+  bg-retina-webp($fileName, "jpg", $enable-webp, $cdn.assets,
+          linear-gradient(180deg, rgba(0, 0, 0, .40), rgba(0, 0, 0, .40)));
+
+body{
+  background-color:#f7f7f7
+}
+
+.content
+  height: 100%
+
+.logo
+  width: 60px
+  
+.ocado-container {
+  min-width: 200px;
+  min-height: 0px!important;
+  margin-bottom: 1em;
+}
+
+.ocado-container:last-child {
+  margin-bottom: 0;
+}
+
+.ocado-layout-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hide 
+  display: none
+
+.sectionTitle {
+  margin-left: 10px;
+  margin-top: 10px;
+  display: inline-block;
+  color: #ab6438;
+}
+
+.sectionSubtitle {
+  display: inline-block;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+.recipe__suggestion {
+  font-size: 24px!important;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.hero a {
+  font-size: 1em;
+  color: #fff;
+}
+
+.cards
+  display: flex
+  flex-wrap: wrap
+  align-self: stretch
+  margin-bottom: 2em
+  justify-content: space-around
+  width: 50em
+
+.card 
+  padding: 1em
+  padding-top: 0.5em
+  margin-bottom: 1em
+  display: flex
+  flex-direction: column
+  align-items: center
+  width: 230px
+  min-height: 230px
+  background-color: white
+
+.card__family
+  border-bottom: 1px solid black
+  align-self: stretch
+  margin-bottom: 1em
+
+h3.card__family__name
+  font-size: 1.6rem
+  margin-bottom: 0
+
+.card__family__examples
+  font-style: italic
+  font-size: 0.8rem
+  margin: 0
+  padding:0
+  margin-top: -1em;
+  margin-bottom: -0.5em;
+
+.card__box
+  align-self: stretch
+  display: flex
+  flex-direction: column
+  font-size: 0.9rem
+  
+.card__box__title
+  margin-bottom: 4px
+  
+.card__box--bought
+  .card__box__items
+    font-style: italic
+  
+.card__box--recommend
+  margin-bottom: 1em;
+
+.item
+  display: flex
+  width: 100%
+  align-self: stretch
+  justify-content: space-between
+  margin-bottom: 4px
+  position: relative
+
+.item__name
+  padding: 2px
+  line-height: 28px
+  
+.item__name__label
+  position: absolute
+  font-weight: 400
+  white-space: nowrap
+  
+.item__spacer
+  flex: 1;
+  background-color: #C1C1C1
+
+.item__score
+  align-self: flex-end
+  flex: 0 0 55px
+  padding: 0.5em
+  text-align: center;
+  font-family: Source Code Pro;
+  font-style: normal;
+  
+.item__text
+  max-width: 170px;
+  
+.item__star
+  align-self: flex-end
+  width: 30px
+  height: 30px
+  padding-right: 1.5em
+
+.scoresinfo .footer
+  padding: 2em;
+
+.card--cruciferous
+  .card__box--recommend
+    .item__name
+      background-color: #00d260
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #9de8c4
+
+.card--green-leafy
+  .card__box--recommend
+    .item__name
+      background-color: #00d260
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #9de8c4
+
+.card--allium
+  .card__box--recommend
+    .item__name
+      background-color: #9a00fe
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #c9a4ee
+
+.card--yellow-orange
+  .card__box--recommend
+    .item__name
+      background-color: #f39400
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #fbd496
+
+.card--citrus
+  .card__box--recommend
+    .item__name
+      background-color: #f0e211
+      color: black
+  .card__box--bought
+      .item__name
+        background-color: #f7f0c3
+
+.card--berry
+  .card__box--recommend
+    .item__name
+      background-color: #e70000
+      color: white
+  .card__box--bought
+      .item__name
+        background-color: #faa9a9
+
+.onecard
+  display: flex
+  justify-content: center
+  .card
+    padding: 1em;
+    margin:0
+    min-height: 0
+    flex:1
+    width: auto
+
+@media (max-width: 50em)
+  .content
+    padding:0
+    .ocado-container
+      margin:0
+
+  .hero
+    display: none
+
+  .hero-sticky-header
+    display: none
+  
+  .scores-container
+    display: none
+  
+  .card--yellow-orange
+    .card__family__name 
+      font-size: 1.4rem
+    

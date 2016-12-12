@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="9564.501 -915.163 110.122 110.123">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #00bc65;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="group-191" transform="translate(9564.501 -915.163)">
+    <path id="path" class="cls-1" d="M110.122,86.63,86.832,110.123l-63.371-.286L0,86.627l.173-63.42L23.188.116,86.832,0l23.291,23.207Z" transform="translate(0 0)"/>
+    <path id="path-25" class="cls-2" d="M48.892,30.036H14.646L0,15.39V0H62.383V16.545Z" transform="translate(24.261 48.895)"/>
+    <rect id="rectangle-73" class="cls-1" width="4.621" height="18.484" transform="translate(53.142 54.671)"/>
+    <rect id="rectangle-73-2" data-name="rectangle-73" class="cls-1" width="4.621" height="18.484" transform="translate(64.694 54.671)"/>
+    <path id="rectangle-72" class="cls-2" d="M0,0H3.953V21.053H0Z" transform="translate(46.729 34.949) rotate(45)"/>
+    <path id="rectangle-72-2" data-name="rectangle-72" class="cls-2" d="M0,0H3.472V18.49H0Z" transform="translate(60.738 38.387) rotate(-45)"/>
+    <rect id="rectangle-73-3" data-name="rectangle-73" class="cls-1" width="4.621" height="18.484" transform="translate(41.588 54.671)"/>
+    <rect id="rectangle-73-4" data-name="rectangle-73" class="cls-1" width="4.621" height="9.242" transform="translate(30.037 54.671)"/>
+    <rect id="rectangle-73-5" data-name="rectangle-73" class="cls-1" width="4.621" height="9.242" transform="translate(76.245 54.671)"/>
+  </g>
+</svg>

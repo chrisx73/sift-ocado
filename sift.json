@@ -1,0 +1,124 @@
+{
+  "name": "sift-ocado",
+  "display-name": "Ocado Expenses",
+  "description": "Ocado receipts aggregation and healthier food suggestions",
+  "subtitle": "Grocery Insights",
+  "author": "Christian Miccio",
+  "version": "1.0.1",
+  "icon": "assets/icon.svg",
+  "marketing": {
+    "screenshots": [
+      "assets/screenshot-1.png"
+    ],
+    "links": [
+      {
+        "label": "Github",
+        "type": "github",
+        "url": "https://github.com/chrisx73/sift-ocado"
+      }
+    ]
+  },
+  "interfaces": {
+    "email": {
+      "thread" : {
+        "controller": "dist/js/controller.umd-es2015.js"
+      }
+    },
+    "summary": {
+      "controller": "dist/js/controller.umd-es2015.js"
+    }
+  },
+  "dag": {
+    "inputs":{
+      "emails":{
+        "ocadoOrders":{
+          "filter":{
+            "conditions":[{
+              "from":{
+                "regexp": {
+                  "pattern": "customerservices@ocado\\.com",
+                  "flags": "i"
+                }
+              }
+            },{
+              "date": "between now and 12 months before now"
+            },{
+              "subject":{
+                "regexp": {
+                  "pattern": "Confirmation of your order",
+                  "flags": "i"
+                }
+              }
+            }],
+            "operator": "AND"
+          },
+          "wants": [
+            "archive",
+            "strippedHtmlBody"
+          ]
+        }
+      }
+    },
+    "nodes":[{
+      "#": "Parse",
+      "implementation": {
+        "javascript": "server/parse.js"
+      },
+      "input": {
+          "bucket": "ocadoOrders"
+      },
+      "outputs": {
+          "messages": {},
+          "foodItems": {}
+      }
+    },
+    {
+      "#": "Summarize",
+      "implementation": {
+        "javascript": "server/summarize.js"
+      },
+      "input": {
+          "bucket": "messages",
+          "select": "/*/*"
+      },
+      "outputs": {
+          "count": {}
+      }
+    },
+    {
+      "#": "Food Set Creator",
+      "implementation": {
+        "javascript": "server/intersection.js"
+      },
+      "input": {
+        "bucket": "foodItems",
+        "select": "*"
+      },
+      "outputs": {
+        "suggestions": {},
+        "tidList":{}
+      }
+    }],
+    "stores":{
+      "messages" : {
+        "key$schema":"string/string/string"
+      }, 
+      "foodItems":{
+        "key$schema": "string"
+      }
+    },
+    "outputs":{
+      "exports":{
+        "count" : {
+          "key$schema":"string"
+        },
+        "suggestions" : {
+          "key$schema":"string"
+        },
+        "tidList":{
+          "import":"_email.tid"
+        }
+      }
+    }
+  }
+}

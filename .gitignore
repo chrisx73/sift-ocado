@@ -1,0 +1,10 @@
+node_modules/
+dump.svg
+sdk_tmp/
+.*run.json
+.*-grip.json
+server/tests
+email_creds.json
+bots_creds.json
+.*-grip.json
+slack_creds.json
