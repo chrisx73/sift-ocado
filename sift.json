@@ -4,7 +4,7 @@
   "description": "Ocado receipts aggregation and healthier food suggestions",
   "subtitle": "Grocery Insights",
   "author": "Christian Miccio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icon": "assets/icon.svg",
   "marketing": {
     "screenshots": [
