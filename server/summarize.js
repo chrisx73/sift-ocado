@@ -12,15 +12,26 @@ module.exports = function(got) {
 
   console.log('sift-ocado: reduce.js: running...');
 
-  var total = 0;
-  for (var d of inData.data) {
+  let orders = {};
+  inData.data.forEach(d => {
     console.log('REDUCE: key: ', d.key);
-    var val = JSON.parse(d.value);
-    var tot = parseFloat(val.total);
-    console.log('REDUCE: total: ', tot);
-    total = total + tot;
-  }
-  var month = query[0];
+    let val = JSON.parse(d.value);
+    let order = val.orderRef;
+    let temp = {
+      date: new Date(val.date),
+      total: parseFloat(val.total)
+    }
+    if(orders.hasOwnProperty(order)){
+      if(orders[order].date < temp.date ){
+        orders[order] = temp;
+      }
+    }else{
+      orders[order] = temp;
+    }
+  })
+  console.log('REDUCE: list of orders', orders);
+  let total = Object.keys(orders).reduce((a, b) => a + orders[b].total, 0);
+  let month = query[0];
   console.log('REDUCE: month: ', month);
 
   return ({name: 'count', key: month, value: total});
