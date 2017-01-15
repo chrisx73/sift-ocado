@@ -49,7 +49,7 @@ export default class CreateView extends SiftView {
     let min = Infinity;
     data.forEach(d => {
       min = Math.min(min, d.key);
-      months[d.key] = d.value
+      months[d.key] = +d.value;
     });
 
     this._counts = Object.keys(months)

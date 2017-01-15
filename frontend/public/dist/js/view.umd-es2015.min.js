@@ -10480,7 +10480,7 @@ var CreateView = (function (SiftView) {
     var min = Infinity;
     data.forEach(function (d) {
       min = Math.min(min, d.key);
-      months[d.key] = d.value
+      months[d.key] = +d.value;
     });
 
     this._counts = Object.keys(months)
